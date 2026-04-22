@@ -1,11 +1,11 @@
 <!DOCTYPE html>
-<html lang="en">
-<head>
-<meta charset="UTF-8">
+<!-- saved from url=(0067)file:///C:/Users/LEONA3946/Downloads/gemini-code-1776886256053.html -->
+<html lang="en"><head><meta http-equiv="Content-Type" content="text/html; charset=UTF-8">
+
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>LifeSight — Data Journey</title>
-<link href="https://fonts.googleapis.com/css2?family=Fraunces:ital,opsz,wght@0,9..144,300;0,9..144,400;0,9..144,500;0,9..144,600;1,9..144,400&family=JetBrains+Mono:wght@300;400;500&family=Inter:wght@300;400;500;600&display=swap" rel="stylesheet">
-<script src="https://cdnjs.cloudflare.com/ajax/libs/d3/7.9.0/d3.min.js"></script>
+<title>LifeSight — Data Process Proposal</title>
+<link href="./index_files/css2" rel="stylesheet">
+<script src="./index_files/d3.min.js.download"></script>
 <style>
   :root {
     --bg: #f5f1ea;
@@ -53,11 +53,11 @@
   /* ── HEADER ─────────────────────────────────────────── */
   header {
     position: fixed; top: 0; left: 0; right: 0;
-    padding: 18px 32px 14px;
+    padding: 24px 36px 14px;
     background: linear-gradient(to bottom, var(--bg) 70%, transparent);
     z-index: 30;
     display: flex; align-items: flex-end; justify-content: space-between;
-    pointer-events: none; /* Let clicks pass through to D3 canvas */
+    pointer-events: none;
   }
   .title-block {
     display: flex; align-items: baseline; gap: 14px;
@@ -66,38 +66,18 @@
   .mark {
     font-family: 'Fraunces', serif;
     font-weight: 500;
-    font-size: 1.3rem;
-    font-style: italic;
+    font-size: 1.4rem;
     color: var(--ink);
     letter-spacing: -0.5px;
-  }
-  .mark em {
-    font-weight: 600;
-    font-style: normal;
+    font-style: italic;
   }
   .subtitle {
     font-family: 'JetBrains Mono', monospace;
-    font-size: 0.68rem;
-    font-weight: 400;
-    color: var(--ink-faint);
-    letter-spacing: 1px;
-    text-transform: uppercase;
-    margin-bottom: 2px;
-  }
-  .header-right {
-    display: flex; flex-direction: column; align-items: flex-end; gap: 2px;
-    pointer-events: auto;
-  }
-  .stamp {
-    font-family: 'JetBrains Mono', monospace;
-    font-size: 0.62rem;
-    color: var(--ink-faint);
-    letter-spacing: 1.5px;
-    text-transform: uppercase;
-  }
-  .stamp strong {
-    color: var(--ink-soft);
+    font-size: 0.75rem;
     font-weight: 500;
+    color: var(--ink-faint);
+    letter-spacing: 2px;
+    text-transform: uppercase;
   }
 
   /* ── CANVAS ─────────────────────────────────────────── */
@@ -105,41 +85,10 @@
   #canvas:active { cursor: grabbing; }
   svg { width: 100%; height: 100%; display: block; }
 
-  /* ── LEGEND (bottom left) ───────────────────────────── */
-  .legend {
-    position: fixed;
-    bottom: 22px; left: 32px;
-    z-index: 15;
-    font-family: 'JetBrains Mono', monospace;
-    font-size: 0.65rem;
-    color: var(--ink-faint);
-    letter-spacing: 0.5px;
-    display: flex; flex-direction: column; gap: 6px;
-    max-width: 260px;
-    pointer-events: none;
-  }
-  .legend-row { display: flex; align-items: center; gap: 8px; }
-  .legend-swatch { width: 10px; height: 10px; border-radius: 2px; flex-shrink: 0; }
-
   /* ── SVG TEXT STYLES ────────────────────────────────── */
-  .phase-label {
-    font-family: 'JetBrains Mono', monospace;
-    font-size: 12px;
-    font-weight: 500;
-    letter-spacing: 2.5px;
-    text-transform: uppercase;
-    pointer-events: none;
-  }
-  .phase-num {
-    font-family: 'Fraunces', serif;
-    font-style: italic;
-    font-size: 15px;
-    font-weight: 400;
-    pointer-events: none;
-  }
   .node-label {
     font-family: 'Fraunces', serif;
-    font-size: 15px;
+    font-size: 16px;
     font-weight: 500;
     fill: var(--ink);
     text-anchor: middle;
@@ -148,7 +97,7 @@
   }
   .node-num {
     font-family: 'JetBrains Mono', monospace;
-    font-size: 11px;
+    font-size: 12px;
     font-weight: 500;
     fill: var(--ink-faint);
     text-anchor: middle;
@@ -158,7 +107,7 @@
   .edge-label {
     font-family: 'Fraunces', serif;
     font-style: italic;
-    font-size: 12px;
+    font-size: 13px;
     font-weight: 400;
     fill: var(--ink-faint);
     text-anchor: middle;
@@ -166,7 +115,7 @@
   }
   .hub-title {
     font-family: 'Fraunces', serif;
-    font-size: 38px;
+    font-size: 42px;
     font-weight: 500;
     font-style: italic;
     fill: white;
@@ -177,16 +126,10 @@
 
   /* Animated flow on edges */
   .flow {
-    stroke-dasharray: 3 9;
-    animation: dash 3s linear infinite;
+    stroke-dasharray: 4 10;
+    animation: dash 2.5s linear infinite;
   }
-  @keyframes dash { to { stroke-dashoffset: -24; } }
-
-  .flow-reverse {
-    stroke-dasharray: 3 9;
-    animation: dash-rev 3s linear infinite;
-  }
-  @keyframes dash-rev { to { stroke-dashoffset: 24; } }
+  @keyframes dash { to { stroke-dashoffset: -28; } }
 
   /* Pulse for hub */
   .pulse {
@@ -200,18 +143,19 @@
   }
 
   /* Hover states on nodes */
-  .node-hit { cursor: pointer; }
+  .node-hit { cursor: grab; }
+  .node-hit:active { cursor: grabbing; }
   .node-hit:hover .node-circle {
     filter: brightness(1.05);
   }
 
   /* ── PANEL ──────────────────────────────────────────── */
   #panel {
-    position: fixed; top: 68px; right: 0;
-    width: 400px; height: calc(100vh - 68px);
+    position: fixed; top: 0; right: 0;
+    width: 420px; height: 100vh;
     background: var(--paper);
     border-left: 1px solid var(--rule);
-    z-index: 20;
+    z-index: 40;
     display: flex; flex-direction: column;
     transition: transform 0.5s cubic-bezier(0.16, 1, 0.3, 1);
     box-shadow: -20px 0 40px rgba(26, 24, 20, 0.06);
@@ -225,11 +169,11 @@
   }
 
   .panel-inner {
-    padding: 34px 32px 20px;
+    padding: 50px 36px 20px;
     flex: 1;
     overflow-y: auto;
     display: flex; flex-direction: column;
-    gap: 22px;
+    gap: 24px;
   }
 
   .panel-header {
@@ -245,27 +189,13 @@
   }
   .panel-title {
     font-family: 'Fraunces', serif;
-    font-size: 1.9rem;
+    font-size: 2rem;
     font-weight: 500;
     line-height: 1.1;
     color: var(--ink);
     letter-spacing: -1px;
   }
-  .panel-title em {
-    font-style: italic;
-    font-weight: 400;
-    color: var(--ink-soft);
-  }
 
-  .panel-phase {
-    font-family: 'Fraunces', serif;
-    font-style: italic;
-    font-size: 0.9rem;
-    color: var(--ink-faint);
-    margin-top: 2px;
-  }
-
-  .rule { height: 1px; background: var(--rule); }
   .rule-dotted {
     height: 1px;
     background-image: linear-gradient(to right, var(--rule) 50%, transparent 50%);
@@ -274,24 +204,24 @@
 
   .section-label {
     font-family: 'JetBrains Mono', monospace;
-    font-size: 0.6rem;
+    font-size: 0.65rem;
     font-weight: 500;
     letter-spacing: 2px;
     text-transform: uppercase;
     color: var(--ink-faint);
-    margin-bottom: 10px;
+    margin-bottom: 12px;
   }
 
   .panel-body {
     font-family: 'Fraunces', serif;
-    font-size: 0.98rem;
+    font-size: 1.05rem;
     line-height: 1.55;
     color: var(--ink-soft);
   }
-  .panel-body p + p { margin-top: 10px; }
+  .panel-body p + p { margin-top: 12px; }
 
   .panel-detail {
-    display: flex; gap: 14px; margin-bottom: 12px;
+    display: flex; gap: 14px; margin-bottom: 14px;
   }
   .detail-num {
     font-family: 'Fraunces', serif;
@@ -304,14 +234,14 @@
   }
   .detail-text {
     font-family: 'Fraunces', serif;
-    font-size: 0.92rem;
+    font-size: 0.95rem;
     line-height: 1.55;
     color: var(--ink-soft);
   }
 
   .panel-output {
     background: var(--bg-deep);
-    padding: 14px 16px;
+    padding: 16px 20px;
     border-left: 3px solid var(--panel-color, var(--c-onboard));
     border-radius: 2px;
   }
@@ -322,11 +252,11 @@
     letter-spacing: 2px;
     text-transform: uppercase;
     color: var(--ink-faint);
-    margin-bottom: 6px;
+    margin-bottom: 8px;
   }
   .output-val {
     font-family: 'Fraunces', serif;
-    font-size: 0.95rem;
+    font-size: 1rem;
     font-style: italic;
     color: var(--ink);
   }
@@ -334,9 +264,9 @@
   .panel-aside {
     font-family: 'Fraunces', serif;
     font-style: italic;
-    font-size: 0.88rem;
+    font-size: 0.9rem;
     color: var(--ink-faint);
-    padding: 10px 14px;
+    padding: 12px 16px;
     background: rgba(200, 155, 90, 0.08);
     border-radius: 2px;
     line-height: 1.5;
@@ -344,7 +274,7 @@
   .panel-aside strong { font-style: normal; font-weight: 500; color: var(--c-accent); }
 
   .panel-foot {
-    padding: 16px 32px 22px;
+    padding: 20px 36px;
     border-top: 1px solid var(--rule);
     display: flex; justify-content: space-between; align-items: center;
   }
@@ -355,12 +285,12 @@
     letter-spacing: 1px;
   }
   .panel-close {
-    padding: 8px 16px;
+    padding: 10px 20px;
     background: transparent;
     border: 1px solid var(--rule);
     color: var(--ink-soft);
     font-family: 'JetBrains Mono', monospace;
-    font-size: 0.68rem;
+    font-size: 0.7rem;
     letter-spacing: 1.5px;
     text-transform: uppercase;
     cursor: pointer;
@@ -373,75 +303,64 @@
     border-color: var(--ink);
   }
 
-  /* Scrollbar */
   .panel-inner::-webkit-scrollbar { width: 6px; }
   .panel-inner::-webkit-scrollbar-track { background: transparent; }
   .panel-inner::-webkit-scrollbar-thumb { background: var(--rule); border-radius: 3px; }
-
-  @media (max-width: 1100px) { #panel { width: 340px; } }
 </style>
 </head>
 <body>
 
 <header>
   <div class="title-block">
-    <div style="display: flex; flex-direction: column; gap: 2px;">
+    <div style="display: flex; flex-direction: column; gap: 4px;">
       <span class="subtitle">WTW · LifeSight</span>
-      <span class="mark"><em>The</em> Data Journey</span>
+      <span class="mark">Data Process Proposal Demo</span>
     </div>
-  </div>
-  <div class="header-right">
-    <span class="stamp">from <strong>client submission</strong> to <strong>live insight</strong></span>
-    <span class="stamp" style="font-size: 0.56rem; opacity: 0.6;">click to explore · scroll to zoom</span>
   </div>
 </header>
 
-<div id="canvas"></div>
+<div id="canvas"><svg viewBox="0,0,1912,948"><g transform="translate(0,0) scale(1)"><g class="edge-layer"><path class="link-path" fill="none" stroke="#b8593e" stroke-opacity="0.2" stroke-width="2" d="M483.6137964260303,556.4004895228502 Q504.71098868011006,569.1364099947531 555.3019471291294,576.3843658495831"></path><path class="link-path" fill="none" stroke="#b8593e" stroke-opacity="0.2" stroke-width="2" d="M478.70042333225706,673.7129115797496 Q506.23179871442244,652.4180798811412 561.8966149886207,620.7064586783481"></path><path class="link-path" fill="none" stroke="#b8593e" stroke-opacity="0.2" stroke-width="2" d="M607.7472781009533,546.1563194869707 Q592.0687313752672,489.14244341000165 606.387729076492,431.74473357277725"></path><path class="link-path" fill="none" stroke="#b8593e" stroke-opacity="0.2" stroke-width="2" d="M630.4917818507639,339.1711930428075 Q645.8351586068405,288.626971906538 686.636364961798,253.95407434816673"></path><path class="link-path" fill="none" stroke="#b8593e" stroke-opacity="0.2" stroke-width="2" d="M760.0690580531079,195.33540809017947 Q824.5700826629813,160.8358242880726 900.6468521568199,154.01298397903867"></path><path class="link-path" fill="none" stroke="#b8593e" stroke-opacity="0.2" stroke-width="2" d="M995.6975862454293,153.90119518791795 Q1073.1939034573902,166.16113661884518 1140.6309019470402,206.68430693189003"></path><path class="link-path" fill="none" stroke="#b8593e" stroke-opacity="0.2" stroke-width="2" d="M1219.4328492437858,261.4132037175076 Q1259.9425241721476,290.2226186646589 1275.2680675549325,335.3341659353764"></path><path class="link-path" fill="none" stroke="#b8593e" stroke-opacity="0.2" stroke-width="2" d="M1265.3382257368976,392.22735332573353 Q1196.3924478303445,413.0423244113395 1098.726971294489,442.5278727927226"></path><path class="link-path" fill="none" stroke="#3a5a78" stroke-opacity="0.2" stroke-width="2" d="M1091.249442225028,532.9257561704446 Q1180.4134872956854,565.8461073634019 1241.434457872307,588.3757243174736"></path><path class="link-path" fill="none" stroke="#3a5a78" stroke-opacity="0.2" stroke-width="2" d="M1267.8695232313016,644.7341916775167 Q1249.1950807710834,699.2252723654791 1206.4341745278196,735.832218676066"></path><path class="link-path" fill="none" stroke="#3a5a78" stroke-opacity="0.2" stroke-width="2" d="M1132.8314029903245,795.1721188058673 Q1072.669611275107,830.2152318862363 1003.2071784921874,836.7364573059023"></path><path class="link-path" fill="none" stroke="#3a5a78" stroke-opacity="0.2" stroke-width="2" d="M909.3097465152304,836.1878424900659 Q840.4139983675208,823.6432543823364 781.4865904118722,782.8032215208068"></path><path class="link-flow flow" fill="none" stroke="#b8593e" stroke-opacity="0.8" stroke-width="2" marker-end="url(#arr-onboard)" d="M483.6137964260303,556.4004895228502 Q504.71098868011006,569.1364099947531 555.3019471291294,576.3843658495831"></path><path class="link-flow flow" fill="none" stroke="#b8593e" stroke-opacity="0.8" stroke-width="2" marker-end="url(#arr-onboard)" d="M478.70042333225706,673.7129115797496 Q506.23179871442244,652.4180798811412 561.8966149886207,620.7064586783481"></path><path class="link-flow flow" fill="none" stroke="#b8593e" stroke-opacity="0.8" stroke-width="2" marker-end="url(#arr-onboard)" d="M607.7472781009533,546.1563194869707 Q592.0687313752672,489.14244341000165 606.387729076492,431.74473357277725"></path><path class="link-flow flow" fill="none" stroke="#b8593e" stroke-opacity="0.8" stroke-width="2" marker-end="url(#arr-onboard)" d="M630.4917818507639,339.1711930428075 Q645.8351586068405,288.626971906538 686.636364961798,253.95407434816673"></path><path class="link-flow flow" fill="none" stroke="#b8593e" stroke-opacity="0.8" stroke-width="2" marker-end="url(#arr-onboard)" d="M760.0690580531079,195.33540809017947 Q824.5700826629813,160.8358242880726 900.6468521568199,154.01298397903867"></path><path class="link-flow flow" fill="none" stroke="#b8593e" stroke-opacity="0.8" stroke-width="2" marker-end="url(#arr-onboard)" d="M995.6975862454293,153.90119518791795 Q1073.1939034573902,166.16113661884518 1140.6309019470402,206.68430693189003"></path><path class="link-flow flow" fill="none" stroke="#b8593e" stroke-opacity="0.8" stroke-width="2" marker-end="url(#arr-onboard)" d="M1219.4328492437858,261.4132037175076 Q1259.9425241721476,290.2226186646589 1275.2680675549325,335.3341659353764"></path><path class="link-flow flow" fill="none" stroke="#b8593e" stroke-opacity="0.8" stroke-width="2" marker-end="url(#arr-onboard)" d="M1265.3382257368976,392.22735332573353 Q1196.3924478303445,413.0423244113395 1098.726971294489,442.5278727927226"></path><path class="link-flow flow" fill="none" stroke="#3a5a78" stroke-opacity="0.8" stroke-width="2" marker-end="url(#arr-analytics)" d="M1091.249442225028,532.9257561704446 Q1180.4134872956854,565.8461073634019 1241.434457872307,588.3757243174736"></path><path class="link-flow flow" fill="none" stroke="#3a5a78" stroke-opacity="0.8" stroke-width="2" marker-end="url(#arr-analytics)" d="M1267.8695232313016,644.7341916775167 Q1249.1950807710834,699.2252723654791 1206.4341745278196,735.832218676066"></path><path class="link-flow flow" fill="none" stroke="#3a5a78" stroke-opacity="0.8" stroke-width="2" marker-end="url(#arr-analytics)" d="M1132.8314029903245,795.1721188058673 Q1072.669611275107,830.2152318862363 1003.2071784921874,836.7364573059023"></path><path class="link-flow flow" fill="none" stroke="#3a5a78" stroke-opacity="0.8" stroke-width="2" marker-end="url(#arr-analytics)" d="M909.3097465152304,836.1878424900659 Q840.4139983675208,823.6432543823364 781.4865904118722,782.8032215208068"></path></g><g class="loop-layer"><path class="link-path" fill="none" stroke="#b8593e" stroke-opacity="0.2" stroke-width="2" d="M1147.340746375733,223.85202494058024 Q959.7057621846579,306.94939914378335 771.8584809671045,210.04689854155066"></path><path class="link-flow flow" fill="none" stroke="#b8593e" stroke-opacity="0.8" stroke-width="2" stroke-dasharray="4 8" marker-end="url(#arr-loop)" d="M1147.340746375733,223.85202494058024 Q959.7057621846579,306.94939914378335 771.8584809671045,210.04689854155066"></path></g><g class="node-layer"><g class="node-group node-hit" transform="translate(440.2665018470159, 544.3169448160952)"><circle class="ring-select" r="55" fill="none" stroke="#b8593e" stroke-width="2.5" stroke-dasharray="4 6" opacity="0"></circle><circle r="44" fill="var(--paper)" filter="url(#shadow)"></circle><circle class="node-circle ring-main" r="44" fill="none" stroke="#b8593e" stroke-width="2"></circle><circle r="36" fill="url(#grad-template-std)" fill-opacity="0.25"></circle><text class="node-num" y="4" fill="#b8593e">01A</text><text class="node-label" y="70">Standard Template</text></g><g class="node-group node-hit" transform="translate(440.7487660928265, 697.892897369257)"><circle class="ring-select" r="55" fill="none" stroke="#b8593e" stroke-width="2.5" stroke-dasharray="4 6" opacity="0"></circle><circle r="44" fill="var(--paper)" filter="url(#shadow)"></circle><circle class="node-circle ring-main" r="44" fill="none" stroke="#b8593e" stroke-width="2"></circle><circle r="36" fill="url(#grad-template-custom)" fill-opacity="0.25"></circle><text class="node-num" y="4" fill="#b8593e">01B</text><text class="node-label" y="70">Custom Format</text></g><g class="node-group node-hit" transform="translate(608.2819738368137, 591.1531427133947)"><circle class="ring-select" r="55" fill="none" stroke="#b8593e" stroke-width="2.5" stroke-dasharray="4 6" opacity="0"></circle><circle r="44" fill="var(--paper)" filter="url(#shadow)"></circle><circle class="node-circle ring-main" r="44" fill="none" stroke="#b8593e" stroke-width="2"></circle><circle r="36" fill="url(#grad-datalink)" fill-opacity="0.25"></circle><text class="node-num" y="4" fill="#b8593e">02</text><text class="node-label" y="70">DataLink</text></g><g class="node-group node-hit" transform="translate(605.7342120659958, 376.7486162960368)"><circle class="ring-select" r="55" fill="none" stroke="#b8593e" stroke-width="2.5" stroke-dasharray="4 6" opacity="0"></circle><circle r="44" fill="var(--paper)" filter="url(#shadow)"></circle><circle class="node-circle ring-main" r="44" fill="none" stroke="#b8593e" stroke-width="2"></circle><circle r="36" fill="url(#grad-tct)" fill-opacity="0.25"></circle><text class="node-num" y="4" fill="#b8593e">03</text><text class="node-label" y="70">TCT Storage</text></g><g class="node-group node-hit" transform="translate(716.895616920959, 208.0261125942198)"><circle class="ring-select" r="55" fill="none" stroke="#b8593e" stroke-width="2.5" stroke-dasharray="4 6" opacity="0"></circle><circle r="44" fill="var(--paper)" filter="url(#shadow)"></circle><circle class="node-circle ring-main" r="44" fill="none" stroke="#b8593e" stroke-width="2"></circle><circle r="36" fill="url(#grad-dvs-import)" fill-opacity="0.25"></circle><text class="node-num" y="4" fill="#b8593e">04</text><text class="node-label" y="70">DVS Import</text></g><g class="node-group node-hit" transform="translate(953.4143913183353, 138.50212291854496)"><circle class="ring-select" r="55" fill="none" stroke="#b8593e" stroke-width="2.5" stroke-dasharray="4 6" opacity="0"></circle><circle r="44" fill="var(--paper)" filter="url(#shadow)"></circle><circle class="node-circle ring-main" r="44" fill="none" stroke="#b8593e" stroke-width="2"></circle><circle r="36" fill="url(#grad-checks)" fill-opacity="0.25"></circle><text class="node-num" y="4" fill="#b8593e">05</text><text class="node-label" y="70">Quality Checks</text></g><g class="node-group node-hit" transform="translate(1192.3103624134885, 225.50539526112368)"><circle class="ring-select" r="55" fill="none" stroke="#b8593e" stroke-width="2.5" stroke-dasharray="4 6" opacity="0"></circle><circle r="44" fill="var(--paper)" filter="url(#shadow)"></circle><circle class="node-circle ring-main" r="44" fill="none" stroke="#b8593e" stroke-width="2"></circle><circle r="36" fill="url(#grad-queries)" fill-opacity="0.25"></circle><text class="node-num" y="4" fill="#b8593e">06</text><text class="node-label" y="70">Queries File</text></g><g class="node-group node-hit" transform="translate(1308.4177736808513, 379.2214873820679)"><circle class="ring-select" r="55" fill="none" stroke="#b8593e" stroke-width="2.5" stroke-dasharray="4 6" opacity="0"></circle><circle r="44" fill="var(--paper)" filter="url(#shadow)"></circle><circle class="node-circle ring-main" r="44" fill="none" stroke="#b8593e" stroke-width="2"></circle><circle r="36" fill="url(#grad-lifesight-extract)" fill-opacity="0.25"></circle><text class="node-num" y="4" fill="#b8593e">07</text><text class="node-label" y="70">LifeSight Report</text></g><g class="node-group node-hit" transform="translate(959.9150945861941, 484.43566305564514)"><circle r="160" fill="none" stroke="#2d4a3e" stroke-opacity="0.1" stroke-width="1.5" stroke-dasharray="3 7"></circle><circle r="195" fill="#2d4a3e" fill-opacity="0.04" class="pulse"></circle><circle class="ring-select" r="148" fill="none" stroke="#c89b5a" stroke-width="2.5" stroke-dasharray="4 6" opacity="0.9"></circle><circle r="135" fill="none" filter="url(#shadow)"></circle><circle class="node-circle ring-main" r="135" fill="url(#hub-grad)" stroke="rgba(200, 155, 90, 0.5)" stroke-width="3.5"></circle><circle r="115" fill="none" stroke="rgba(200, 155, 90, 0.25)" stroke-width="1"></circle><text class="hub-title" y="12">LifeSight</text><circle cx="-80" cy="62" r="2" fill="#c89b5a" fill-opacity="0.8"></circle><circle cx="80" cy="62" r="2" fill="#c89b5a" fill-opacity="0.8"></circle></g><g class="node-group node-hit" transform="translate(1293.030094444706, 607.4254037554305)"><circle class="ring-select" r="55" fill="none" stroke="#3a5a78" stroke-width="2.5" stroke-dasharray="4 6" opacity="0"></circle><circle r="44" fill="var(--paper)" filter="url(#shadow)"></circle><circle class="node-circle ring-main" r="44" fill="none" stroke="#3a5a78" stroke-width="2"></circle><circle r="36" fill="url(#grad-extract)" fill-opacity="0.25"></circle><text class="node-num" y="4" fill="#3a5a78">08</text><text class="node-label" y="70">Data Extract</text></g><g class="node-group node-hit" transform="translate(1175.682365266992, 781.4318483586159)"><circle class="ring-select" r="55" fill="none" stroke="#3a5a78" stroke-width="2.5" stroke-dasharray="4 6" opacity="0"></circle><circle r="44" fill="var(--paper)" filter="url(#shadow)"></circle><circle class="node-circle ring-main" r="44" fill="none" stroke="#3a5a78" stroke-width="2"></circle><circle r="36" fill="url(#grad-powerbi)" fill-opacity="0.25"></circle><text class="node-num" y="4" fill="#3a5a78">09</text><text class="node-label" y="70">Power BI</text></g><g class="node-group node-hit" transform="translate(950.8337801540381, 853.5301211858763)"><circle class="ring-select" r="55" fill="none" stroke="#3a5a78" stroke-width="2.5" stroke-dasharray="4 6" opacity="0"></circle><circle r="44" fill="var(--paper)" filter="url(#shadow)"></circle><circle class="node-circle ring-main" r="44" fill="none" stroke="#3a5a78" stroke-width="2"></circle><circle r="36" fill="url(#grad-dashboard)" fill-opacity="0.25"></circle><text class="node-num" y="4" fill="#3a5a78">10</text><text class="node-label" y="70">Dashboards</text></g><g class="node-group node-hit" transform="translate(730.7349937422182, 761.6071031148164)"><circle class="ring-select" r="55" fill="none" stroke="#3a5a78" stroke-width="2.5" stroke-dasharray="4 6" opacity="0"></circle><circle r="44" fill="var(--paper)" filter="url(#shadow)"></circle><circle class="node-circle ring-main" r="44" fill="none" stroke="#3a5a78" stroke-width="2"></circle><circle r="36" fill="url(#grad-analysis)" fill-opacity="0.25"></circle><text class="node-num" y="4" fill="#3a5a78">11</text><text class="node-label" y="70">Analysis</text></g></g></g><defs><filter id="shadow" x="-50%" y="-50%" width="200%" height="200%"><fedropshadow dx="0" dy="5" stdDeviation="6" flood-color="rgba(26, 24, 20, 0.15)"></fedropshadow></filter><marker id="arr-onboard" viewBox="0 -4 8 8" refX="8" refY="0" markerWidth="7" markerHeight="7" orient="auto"><path d="M0,-4L8,0L0,4Z" fill="#b8593e" fill-opacity="0.85"></path></marker><marker id="arr-analytics" viewBox="0 -4 8 8" refX="8" refY="0" markerWidth="7" markerHeight="7" orient="auto"><path d="M0,-4L8,0L0,4Z" fill="#3a5a78" fill-opacity="0.85"></path></marker><marker id="arr-loop" viewBox="0 -4 8 8" refX="8" refY="0" markerWidth="7" markerHeight="7" orient="auto"><path d="M0,-4L8,0L0,4Z" fill="#b8593e" fill-opacity="0.85"></path></marker><radialgradient id="grad-template-std" cx="40%" cy="35%" r="65%"><stop offset="0%" stop-color="#f57652"></stop><stop offset="100%" stop-color="#bf5c40"></stop></radialgradient><radialgradient id="grad-template-custom" cx="40%" cy="35%" r="65%"><stop offset="0%" stop-color="#f57652"></stop><stop offset="100%" stop-color="#bf5c40"></stop></radialgradient><radialgradient id="grad-datalink" cx="40%" cy="35%" r="65%"><stop offset="0%" stop-color="#f57652"></stop><stop offset="100%" stop-color="#bf5c40"></stop></radialgradient><radialgradient id="grad-tct" cx="40%" cy="35%" r="65%"><stop offset="0%" stop-color="#f57652"></stop><stop offset="100%" stop-color="#bf5c40"></stop></radialgradient><radialgradient id="grad-dvs-import" cx="40%" cy="35%" r="65%"><stop offset="0%" stop-color="#f57652"></stop><stop offset="100%" stop-color="#bf5c40"></stop></radialgradient><radialgradient id="grad-checks" cx="40%" cy="35%" r="65%"><stop offset="0%" stop-color="#f57652"></stop><stop offset="100%" stop-color="#bf5c40"></stop></radialgradient><radialgradient id="grad-queries" cx="40%" cy="35%" r="65%"><stop offset="0%" stop-color="#f57652"></stop><stop offset="100%" stop-color="#bf5c40"></stop></radialgradient><radialgradient id="grad-lifesight-extract" cx="40%" cy="35%" r="65%"><stop offset="0%" stop-color="#f57652"></stop><stop offset="100%" stop-color="#bf5c40"></stop></radialgradient><radialgradient id="grad-extract" cx="40%" cy="35%" r="65%"><stop offset="0%" stop-color="#4d78a0"></stop><stop offset="100%" stop-color="#3c5d7c"></stop></radialgradient><radialgradient id="grad-powerbi" cx="40%" cy="35%" r="65%"><stop offset="0%" stop-color="#4d78a0"></stop><stop offset="100%" stop-color="#3c5d7c"></stop></radialgradient><radialgradient id="grad-dashboard" cx="40%" cy="35%" r="65%"><stop offset="0%" stop-color="#4d78a0"></stop><stop offset="100%" stop-color="#3c5d7c"></stop></radialgradient><radialgradient id="grad-analysis" cx="40%" cy="35%" r="65%"><stop offset="0%" stop-color="#4d78a0"></stop><stop offset="100%" stop-color="#3c5d7c"></stop></radialgradient><radialgradient id="hub-grad" cx="40%" cy="35%" r="70%"><stop offset="0%" stop-color="#3e6454"></stop><stop offset="100%" stop-color="#1f3529"></stop></radialgradient></defs></svg></div>
 
-<div class="legend">
-  <div class="legend-row">
-    <div class="legend-swatch" style="background: var(--c-onboard);"></div>
-    <span>ONBOARDING &amp; UPDATES</span>
-  </div>
-  <div class="legend-row">
-    <div class="legend-swatch" style="background: var(--c-hub);"></div>
-    <span>LIFESIGHT — SOURCE OF TRUTH</span>
-  </div>
-  <div class="legend-row">
-    <div class="legend-swatch" style="background: var(--c-analytics);"></div>
-    <span>ANALYTICS &amp; REPORTING</span>
-  </div>
-</div>
-
-<div id="panel" class="hidden">
-  <div class="panel-accent"></div>
+<div id="panel" class="" style="--panel-color: #2d4a3e;">
+  <div class="panel-accent" style="background: rgb(45, 74, 62);"></div>
   <div class="panel-inner">
     <div class="panel-header">
-      <span class="panel-crumb" id="p-crumb"></span>
-      <h2 class="panel-title" id="p-title"></h2>
-      <span class="panel-phase" id="p-phase"></span>
+      <span class="panel-crumb" id="p-crumb" style="color: rgb(45, 74, 62);">Central · Platform</span>
+      <h2 class="panel-title" id="p-title">The single source of truth</h2>
     </div>
     <div class="rule-dotted"></div>
 
     <div>
       <div class="section-label">What happens here</div>
-      <div class="panel-body" id="p-body"></div>
+      <div class="panel-body" id="p-body"><p>Everything before this point is about getting data in cleanly. Everything after is about putting it to work. LifeSight holds the authoritative record for every scheme and member — the hub that onboarding feeds and analytics draws from.</p></div>
     </div>
 
     <div>
       <div class="section-label">Working detail</div>
-      <div id="p-details"></div>
+      <div id="p-details"><div class="panel-detail">
+        <span class="detail-num">01</span>
+        <span class="detail-text">Atomic updates: a change either fully commits or fully reverts</span>
+      </div><div class="panel-detail">
+        <span class="detail-num">02</span>
+        <span class="detail-text">Complete change log for audit and reconciliation</span>
+      </div><div class="panel-detail">
+        <span class="detail-num">03</span>
+        <span class="detail-text">One record per client, always current, always trusted</span>
+      </div><div class="panel-detail">
+        <span class="detail-num">04</span>
+        <span class="detail-text">The pivot point between <em>getting data right</em> and <em>getting value out</em></span>
+      </div></div>
     </div>
 
     <div class="panel-output">
       <div class="output-label">Hand-off</div>
-      <div class="output-val" id="p-output"></div>
+      <div class="output-val" id="p-output">Authoritative LifeSight dataset</div>
     </div>
 
     <div class="panel-aside" id="p-aside" style="display: none;"></div>
   </div>
   <div class="panel-foot">
-    <span class="foot-nav" id="p-nav">step · of ·</span>
+    <span class="foot-nav" id="p-nav">the hub · where onboarding becomes insight</span>
     <button class="panel-close" id="p-close">Close</button>
   </div>
 </div>
@@ -449,27 +368,37 @@
 <script>
   // ── MODEL ─────────────────────────────────────────────────────────────
   const PHASES = {
-    onboard:   { label: 'Onboarding & Updates', color: 'var(--c-onboard)',   hex: '#b8593e' },
-    hub:       { label: 'LifeSight',            color: 'var(--c-hub)',       hex: '#2d4a3e' },
-    analytics: { label: 'Analytics',            color: 'var(--c-analytics)', hex: '#3a5a78' },
+    onboard:   { label: 'Onboarding & Updates', hex: '#b8593e' },
+    hub:       { label: 'LifeSight',            hex: '#2d4a3e' },
+    analytics: { label: 'Analytics',            hex: '#3a5a78' },
   };
 
   const ONBOARD = [
     {
-      id: 'template', num: '01', phase: 'onboard', name: 'The Template',
-      title: 'A shared starting line', phase_label: 'Step 1 · Intake',
+      id: 'template-std', num: '01A', phase: 'onboard', name: 'Standard Template',
+      title: 'A shared starting line', phase_label: 'Step 1A · Intake',
       body: 'The client fills in their member and scheme data using our LifeSight template — a structure we\'ve already tuned for everything downstream. It\'s the fastest route in.',
-      aside: '<strong>Flexibility:</strong> if a client pushes back on the template, we can take their format instead and do the mapping on our side. It slows us slightly, but onboarding shouldn\'t hinge on a spreadsheet layout.',
       details: [
         'Pre-formatted columns, field definitions, and validation hints baked in',
         'Reduces back-and-forth — clients know exactly what we need',
         'Versioned so we can track template changes across onboardings',
       ],
-      output: 'A populated client data file'
+      output: 'A populated standard template'
+    },
+    {
+      id: 'template-custom', num: '01B', phase: 'onboard', name: 'Custom Format',
+      title: 'Flexible Mapping', phase_label: 'Step 1B · Intake',
+      body: 'If a client pushes back on the template, we can take their format instead and do the mapping on our side. It slows us slightly, but onboarding shouldn\'t hinge on a spreadsheet layout.',
+      details: [
+        'Accommodates native client exports without friction',
+        'Mapping happens internally inside DVS instead of by the client',
+        'Ensures onboarding momentum isn\'t blocked by formatting rules'
+      ],
+      output: 'A raw client data file'
     },
     {
       id: 'datalink', num: '02', phase: 'onboard', name: 'DataLink',
-      title: 'Getting the data to us, safely', phase_label: 'Step 2 · Transfer',
+      title: 'Secure Transfer', phase_label: 'Step 2 · Transfer',
       body: 'The client sends their file through DataLink — our secure transfer channel — keeping the whole exchange inside a protected environment. (We\'re also open to alternatives where a client has an existing secure setup.)',
       details: [
         'Encrypted in transit, access logged end-to-end',
@@ -600,43 +529,32 @@
 
   const ALL_STEPS = [...ONBOARD, HUB, ...ANALYTICS];
 
-  // ── LAYOUT ────────────────────────────────────────────────────────────
-  let W = window.innerWidth;
-  let H = window.innerHeight;
-  let POS = {};
-  let hubRadius = 135;
-  let R = 0; // Layout circle radius
-
-  function layout() {
-    POS = {};
-    const hubX = W / 2;
-    const hubY = H / 2 + 20; 
-    POS['lifesight'] = { x: hubX, y: hubY };
-
-    R = Math.min(W, H) * 0.36; 
-    const totalNodes = ONBOARD.length + ANALYTICS.length;
-    const startAngle = Math.PI; // start at left (9 o'clock)
-
-    let currentIdx = 0;
-    ONBOARD.forEach(n => {
-      const angle = startAngle + (currentIdx / totalNodes) * 2 * Math.PI;
-      POS[n.id] = { x: hubX + R * Math.cos(angle), y: hubY + R * Math.sin(angle), angle: angle };
-      currentIdx++;
-    });
-
-    ANALYTICS.forEach(n => {
-      const angle = startAngle + (currentIdx / totalNodes) * 2 * Math.PI;
-      POS[n.id] = { x: hubX + R * Math.cos(angle), y: hubY + R * Math.sin(angle), angle: angle };
-      currentIdx++;
-    });
-  }
+  // Define links between nodes
+  const LINKS = [
+    { id: 'l1', s: 'template-std', t: 'datalink', type: 'onboard' },
+    { id: 'l2', s: 'template-custom', t: 'datalink', type: 'onboard' },
+    { id: 'l3', s: 'datalink', t: 'tct', type: 'onboard' },
+    { id: 'l4', s: 'tct', t: 'dvs-import', type: 'onboard' },
+    { id: 'l5', s: 'dvs-import', t: 'checks', type: 'onboard' },
+    { id: 'l6', s: 'checks', t: 'queries', type: 'onboard' },
+    { id: 'l7', s: 'queries', t: 'lifesight-extract', type: 'onboard' },
+    { id: 'l8', s: 'lifesight-extract', t: 'lifesight', type: 'onboard' },
+    { id: 'l9', s: 'lifesight', t: 'extract', type: 'analytics' },
+    { id: 'l10', s: 'extract', t: 'powerbi', type: 'analytics' },
+    { id: 'l11', s: 'powerbi', t: 'dashboard', type: 'analytics' },
+    { id: 'l12', s: 'dashboard', t: 'analysis', type: 'analytics' },
+    { id: 'l13', s: 'queries', t: 'dvs-import', type: 'onboard', reverse: true } // Inner curve bypass loop
+  ];
 
   // ── SVG SETUP ─────────────────────────────────────────────────────────
+  let W = window.innerWidth;
+  let H = window.innerHeight;
+
   const svg = d3.select('#canvas').append('svg').attr('viewBox', [0, 0, W, H]);
   const mainGroup = svg.append('g');
 
   const zoom = d3.zoom()
-    .scaleExtent([0.4, 3])
+    .scaleExtent([0.3, 3])
     .on('zoom', (event) => {
       mainGroup.attr('transform', event.transform);
     });
@@ -650,8 +568,8 @@
     .attr('x', '-50%').attr('y', '-50%')
     .attr('width', '200%').attr('height', '200%');
   shadow.append('feDropShadow')
-    .attr('dx', 0).attr('dy', 4)
-    .attr('stdDeviation', 5)
+    .attr('dx', 0).attr('dy', 5)
+    .attr('stdDeviation', 6)
     .attr('flood-color', 'rgba(26, 24, 20, 0.15)');
 
   // Arrowheads
@@ -661,286 +579,273 @@
                 : '#b8593e';
     defs.append('marker')
       .attr('id', `arr-${phaseKey}`)
-      .attr('viewBox', '0 -3 6 6')
-      .attr('refX', 6).attr('refY', 0)
-      .attr('markerWidth', 6).attr('markerHeight', 6)
+      .attr('viewBox', '0 -4 8 8')
+      .attr('refX', 8).attr('refY', 0)
+      .attr('markerWidth', 7).attr('markerHeight', 7)
       .attr('orient', 'auto')
       .append('path')
-      .attr('d', 'M0,-3L6,0L0,3Z')
+      .attr('d', 'M0,-4L8,0L0,4Z')
       .attr('fill', color)
-      .attr('fill-opacity', 0.8);
+      .attr('fill-opacity', 0.85);
   });
 
+  // Dynamic Gradients for Nodes
+  ALL_STEPS.forEach(n => {
+     if(n.id === 'lifesight') return;
+     const color = n.phase === 'onboard' ? PHASES.onboard.hex : PHASES.analytics.hex;
+     const grad = defs.append('radialGradient')
+        .attr('id', `grad-${n.id}`)
+        .attr('cx', '40%').attr('cy', '35%').attr('r', '65%');
+     grad.append('stop').attr('offset', '0%').attr('stop-color', d3.color(color).brighter(0.8).formatHex());
+     grad.append('stop').attr('offset', '100%').attr('stop-color', d3.color(color).brighter(0.1).formatHex());
+  });
+
+  // Hub Gradient
+  const hubGrad = defs.append('radialGradient')
+    .attr('id', 'hub-grad')
+    .attr('cx', '40%').attr('cy', '35%').attr('r', '70%');
+  hubGrad.append('stop').attr('offset', '0%').attr('stop-color', '#3e6454');
+  hubGrad.append('stop').attr('offset', '100%').attr('stop-color', '#1f3529');
+
   // Layers
-  const bgLayer = mainGroup.append('g').attr('class', 'bg-layer');
   const edgeLayer = mainGroup.append('g').attr('class', 'edge-layer');
+  const loopLayer = mainGroup.append('g').attr('class', 'loop-layer');
   const nodeLayer = mainGroup.append('g').attr('class', 'node-layer');
-  const labelLayer = mainGroup.append('g').attr('class', 'label-layer');
 
-  // ── DRAW ──────────────────────────────────────────────────────────────
   let activeId = null;
+  let R = 0; 
 
+  // ── INITIAL LAYOUT MATH ───────────────────────────────────────────────
+  function initLayout() {
+    const hubX = W / 2;
+    const hubY = H / 2 + 20; 
+    R = Math.min(W, H) * 0.38; 
+
+    // Spread adjusted to ensure wide separation between Node 2 (0.92 PI) and Node 11 (0.72 PI)
+    const angles = {
+      'datalink': Math.PI * 0.92,
+      'tct': Math.PI * 1.10,
+      'dvs-import': Math.PI * 1.28,
+      'checks': Math.PI * 1.50,    // Top center
+      'queries': Math.PI * 1.72,
+      'lifesight-extract': Math.PI * 1.90,
+      'extract': Math.PI * 0.10,
+      'powerbi': Math.PI * 0.28,
+      'dashboard': Math.PI * 0.50,
+      'analysis': Math.PI * 0.72
+    };
+
+    ALL_STEPS.forEach(n => {
+       if (n.id === 'lifesight') {
+          n.baseX = hubX;
+          n.baseY = hubY;
+       } else if (n.id === 'template-std') {
+          const dlAngle = angles['datalink'];
+          n.baseX = hubX + (R + 150) * Math.cos(dlAngle) - 30;
+          n.baseY = hubY + (R + 150) * Math.sin(dlAngle) - 70;
+       } else if (n.id === 'template-custom') {
+          const dlAngle = angles['datalink'];
+          n.baseX = hubX + (R + 150) * Math.cos(dlAngle) - 30;
+          n.baseY = hubY + (R + 150) * Math.sin(dlAngle) + 70;
+       } else {
+          n.baseX = hubX + R * Math.cos(angles[n.id]);
+          n.baseY = hubY + R * Math.sin(angles[n.id]);
+       }
+       
+       n.x = n.baseX;
+       n.y = n.baseY;
+       n.dragging = false;
+    });
+  }
+
+  // ── DRAWING LOGIC ─────────────────────────────────────────────────────
   function draw() {
-    bgLayer.selectAll('*').remove();
     edgeLayer.selectAll('*').remove();
+    loopLayer.selectAll('*').remove();
     nodeLayer.selectAll('*').remove();
-    labelLayer.selectAll('*').remove();
 
-    const hub = POS['lifesight'];
+    // -- Normal Links --
+    const regularLinks = LINKS.filter(d => !d.reverse);
+    edgeLayer.selectAll('.link-path').data(regularLinks, d => d.id)
+        .enter().append('path')
+        .attr('class', 'link-path')
+        .attr('fill', 'none')
+        .attr('stroke', d => d.type === 'onboard' ? '#b8593e' : '#3a5a78')
+        .attr('stroke-opacity', 0.2)
+        .attr('stroke-width', 2);
 
-    // ── Background phase labels ──
-    const labelObX = hub.x - R - 60;
-    const labelObY = hub.y - R + 20;
-    labelLayer.append('text')
-      .attr('class', 'phase-label')
-      .attr('x', labelObX).attr('y', labelObY)
-      .attr('fill', '#b8593e').attr('opacity', 0.8)
-      .text('I · Onboarding & Updates');
-    labelLayer.append('text')
-      .attr('class', 'phase-num')
-      .attr('x', labelObX).attr('y', labelObY + 22)
-      .attr('fill', '#8a8373')
-      .text('client submission through to import');
+    edgeLayer.selectAll('.link-flow').data(regularLinks, d => d.id)
+        .enter().append('path')
+        .attr('class', 'link-flow flow')
+        .attr('fill', 'none')
+        .attr('stroke', d => d.type === 'onboard' ? '#b8593e' : '#3a5a78')
+        .attr('stroke-opacity', 0.8)
+        .attr('stroke-width', 2)
+        .attr('marker-end', d => d.type === 'onboard' ? 'url(#arr-onboard)' : 'url(#arr-analytics)');
 
-    const labelAnX = hub.x + R - 140;
-    const labelAnY = hub.y + R + 30;
-    labelLayer.append('text')
-      .attr('class', 'phase-label')
-      .attr('x', labelAnX).attr('y', labelAnY)
-      .attr('fill', '#3a5a78').attr('opacity', 0.8)
-      .text('II · Analytics & Reporting');
-    labelLayer.append('text')
-      .attr('class', 'phase-num')
-      .attr('x', labelAnX).attr('y', labelAnY + 22)
-      .attr('fill', '#8a8373')
-      .text('data to dashboards to decisions');
+    // -- Clean Inner Curve Bypass Loop (6 to 4) --
+    const loopLink = LINKS.filter(d => d.reverse);
+    loopLayer.selectAll('.link-path').data(loopLink, d => d.id)
+        .enter().append('path')
+        .attr('class', 'link-path')
+        .attr('fill', 'none')
+        .attr('stroke', '#b8593e')
+        .attr('stroke-opacity', 0.2)
+        .attr('stroke-width', 2);
 
+    loopLayer.selectAll('.link-flow').data(loopLink, d => d.id)
+        .enter().append('path')
+        .attr('class', 'link-flow flow')
+        .attr('fill', 'none')
+        .attr('stroke', '#b8593e')
+        .attr('stroke-opacity', 0.8)
+        .attr('stroke-width', 2)
+        .attr('stroke-dasharray', '4 8')
+        .attr('marker-end', 'url(#arr-loop)');
 
-    // ── Onboarding Arc (01 -> 07) ──
-    for (let i = 0; i < ONBOARD.length - 1; i++) {
-      const s = POS[ONBOARD[i].id];
-      const t = POS[ONBOARD[i + 1].id];
-      const offset = 60 / R; // Avoid drawing inside the node circle (node radius ~48)
-      const sAngle = s.angle + offset;
-      const tAngle = t.angle - offset;
+    // -- Nodes --
+    const nodeGroups = nodeLayer.selectAll('.node-group').data(ALL_STEPS, d => d.id);
+    const nodeEnter = nodeGroups.enter().append('g')
+        .attr('class', 'node-group node-hit')
+        .call(d3.drag()
+            .on("start", (event, d) => { d.dragging = true; })
+            .on("drag", (event, d) => { d.x = event.x; d.y = event.y; })
+            .on("end", (event, d) => { d.dragging = false; }))
+        .on('click', (event, d) => selectStep(d));
 
-      const sx = hub.x + R * Math.cos(sAngle);
-      const sy = hub.y + R * Math.sin(sAngle);
-      const tx = hub.x + R * Math.cos(tAngle);
-      const ty = hub.y + R * Math.sin(tAngle);
+    // Outer Selection Ring
+    nodeEnter.append('circle')
+        .attr('class', 'ring-select')
+        .attr('r', d => d.id === 'lifesight' ? 148 : 55)
+        .attr('fill', 'none')
+        .attr('stroke', d => d.id === 'lifesight' ? '#c89b5a' : (d.phase === 'onboard' ? PHASES.onboard.hex : PHASES.analytics.hex))
+        .attr('stroke-width', 2.5)
+        .attr('stroke-dasharray', '4 6')
+        .attr('opacity', 0);
 
-      const path = `M${sx},${sy} A${R},${R} 0 0,1 ${tx},${ty}`;
+    // Background Shadow
+    nodeEnter.append('circle')
+        .attr('r', d => d.id === 'lifesight' ? 135 : 44)
+        .attr('fill', d => d.id === 'lifesight' ? 'none' : 'var(--paper)')
+        .attr('filter', 'url(#shadow)');
 
-      edgeLayer.append('path').attr('d', path).attr('fill', 'none').attr('stroke', '#b8593e').attr('stroke-opacity', 0.2).attr('stroke-width', 2);
-      edgeLayer.append('path').attr('d', path).attr('class', 'flow').attr('fill', 'none').attr('stroke', '#b8593e').attr('stroke-opacity', 0.7).attr('stroke-width', 2).attr('marker-end', 'url(#arr-onboard)');
-    }
+    // Main Circle
+    nodeEnter.append('circle')
+        .attr('class', 'node-circle ring-main')
+        .attr('r', d => d.id === 'lifesight' ? 135 : 44)
+        .attr('fill', d => d.id === 'lifesight' ? 'url(#hub-grad)' : 'none')
+        .attr('stroke', d => d.id === 'lifesight' ? 'rgba(200, 155, 90, 0.5)' : (d.phase === 'onboard' ? PHASES.onboard.hex : PHASES.analytics.hex))
+        .attr('stroke-width', 2);
 
-    // ── Edge 07 -> Hub ──
-    const lastOb = POS[ONBOARD[ONBOARD.length - 1].id];
-    const s07x = lastOb.x - 55 * Math.cos(lastOb.angle);
-    const s07y = lastOb.y - 55 * Math.sin(lastOb.angle);
-    const tHubx = hub.x + hubRadius * Math.cos(lastOb.angle);
-    const tHuby = hub.y + hubRadius * Math.sin(lastOb.angle);
-    const path07ToHub = `M${s07x},${s07y} L${tHubx},${tHuby}`;
+    // Inner Color Gradient (Normal Nodes)
+    nodeEnter.filter(d => d.id !== 'lifesight').append('circle')
+        .attr('r', 36)
+        .attr('fill', d => `url(#grad-${d.id})`)
+        .attr('fill-opacity', 0.25);
 
-    edgeLayer.append('path').attr('d', path07ToHub).attr('fill', 'none').attr('stroke', '#b8593e').attr('stroke-opacity', 0.2).attr('stroke-width', 2);
-    edgeLayer.append('path').attr('d', path07ToHub).attr('class', 'flow').attr('fill', 'none').attr('stroke', '#b8593e').attr('stroke-opacity', 0.7).attr('stroke-width', 2).attr('marker-end', 'url(#arr-onboard)');
+    // Number
+    nodeEnter.filter(d => d.id !== 'lifesight').append('text')
+        .attr('class', 'node-num')
+        .attr('y', 4)
+        .attr('fill', d => d.phase === 'onboard' ? PHASES.onboard.hex : PHASES.analytics.hex)
+        .text(d => d.num);
 
-    // ── Edge Hub -> 08 ──
-    const firstAn = POS[ANALYTICS[0].id];
-    const sHubAnX = hub.x + hubRadius * Math.cos(firstAn.angle);
-    const sHubAnY = hub.y + hubRadius * Math.sin(firstAn.angle);
-    const t08x = firstAn.x - 55 * Math.cos(firstAn.angle);
-    const t08y = firstAn.y - 55 * Math.sin(firstAn.angle);
-    const pathHubTo08 = `M${sHubAnX},${sHubAnY} L${t08x},${t08y}`;
+    // Short Title
+    nodeEnter.filter(d => d.id !== 'lifesight').append('text')
+        .attr('class', 'node-label')
+        .attr('y', 70)
+        .text(d => d.name);
 
-    edgeLayer.append('path').attr('d', pathHubTo08).attr('fill', 'none').attr('stroke', '#3a5a78').attr('stroke-opacity', 0.2).attr('stroke-width', 2);
-    edgeLayer.append('path').attr('d', pathHubTo08).attr('class', 'flow').attr('fill', 'none').attr('stroke', '#3a5a78').attr('stroke-opacity', 0.7).attr('stroke-width', 2).attr('marker-end', 'url(#arr-analytics)');
+    // ── HUB DECORATION ──
+    const hubEnter = nodeEnter.filter(d => d.id === 'lifesight');
+    hubEnter.insert('circle', ':first-child').attr('r', 195).attr('fill', '#2d4a3e').attr('fill-opacity', 0.04).attr('class', 'pulse');
+    hubEnter.insert('circle', ':first-child').attr('r', 160).attr('fill', 'none').attr('stroke', '#2d4a3e').attr('stroke-opacity', 0.1).attr('stroke-width', 1.5).attr('stroke-dasharray', '3 7');
 
-
-    // ── Analytics Arc (08 -> 11) ──
-    for (let i = 0; i < ANALYTICS.length - 1; i++) {
-      const s = POS[ANALYTICS[i].id];
-      const t = POS[ANALYTICS[i + 1].id];
-      const offset = 60 / R;
-      const sAngle = s.angle + offset;
-      const tAngle = t.angle - offset;
-
-      const sx = hub.x + R * Math.cos(sAngle);
-      const sy = hub.y + R * Math.sin(sAngle);
-      const tx = hub.x + R * Math.cos(tAngle);
-      const ty = hub.y + R * Math.sin(tAngle);
-
-      const path = `M${sx},${sy} A${R},${R} 0 0,1 ${tx},${ty}`;
-
-      edgeLayer.append('path').attr('d', path).attr('fill', 'none').attr('stroke', '#3a5a78').attr('stroke-opacity', 0.2).attr('stroke-width', 2);
-      edgeLayer.append('path').attr('d', path).attr('class', 'flow').attr('fill', 'none').attr('stroke', '#3a5a78').attr('stroke-opacity', 0.7).attr('stroke-width', 2).attr('marker-end', 'url(#arr-analytics)');
-    }
-
-    // ── Loop Edge (Queries -> DVS) ──
-    const qPos = POS['queries'];
-    const dvsPos = POS['dvs-import'];
-    const midAngle = (qPos.angle + dvsPos.angle) / 2;
-    const ctrlDist = R + 140; 
-    const ctrlX = hub.x + ctrlDist * Math.cos(midAngle);
-    const ctrlY = hub.y + ctrlDist * Math.sin(midAngle);
-
-    const qOutX = qPos.x + 50 * Math.cos(qPos.angle);
-    const qOutY = qPos.y + 50 * Math.sin(qPos.angle);
-    const dvsInX = dvsPos.x + 50 * Math.cos(dvsPos.angle);
-    const dvsInY = dvsPos.y + 50 * Math.sin(dvsPos.angle);
-
-    const loopPath = `M${qOutX},${qOutY} Q${ctrlX},${ctrlY} ${dvsInX},${dvsInY}`;
-
-    edgeLayer.append('path')
-      .attr('d', loopPath)
-      .attr('class', 'flow-reverse')
-      .attr('fill', 'none')
-      .attr('stroke', '#b8593e')
-      .attr('stroke-opacity', 0.4)
-      .attr('stroke-width', 1.5)
-      .attr('stroke-dasharray', '4 6')
-      .attr('marker-end', 'url(#arr-loop)');
-
-    labelLayer.append('text')
-      .attr('class', 'edge-label')
-      .attr('x', ctrlX + 10)
-      .attr('y', ctrlY + 10)
-      .text('iterate until clean');
-
-
-    // ── HUB ──
-    nodeLayer.append('circle')
-      .attr('cx', hub.x).attr('cy', hub.y)
-      .attr('r', 195)
-      .attr('fill', '#2d4a3e')
-      .attr('fill-opacity', 0.04)
-      .attr('class', 'pulse');
-
-    nodeLayer.append('circle')
-      .attr('cx', hub.x).attr('cy', hub.y)
-      .attr('r', 160)
-      .attr('fill', 'none')
-      .attr('stroke', '#2d4a3e')
-      .attr('stroke-opacity', 0.1)
-      .attr('stroke-width', 1.5)
-      .attr('stroke-dasharray', '3 7');
-
-    const hubG = nodeLayer.append('g')
-      .attr('class', 'node-hit')
-      .attr('transform', `translate(${hub.x}, ${hub.y})`)
-      .on('click', () => selectStep(HUB));
-
-    hubG.append('circle')
-      .attr('r', 148)
-      .attr('fill', 'none')
-      .attr('stroke', '#c89b5a')
-      .attr('stroke-width', 2)
-      .attr('stroke-dasharray', '4 6')
-      .attr('opacity', activeId === 'lifesight' ? 0.9 : 0);
-
-    const hubGrad = defs.append('radialGradient')
-      .attr('id', 'hub-grad')
-      .attr('cx', '40%').attr('cy', '35%').attr('r', '70%');
-    hubGrad.append('stop').attr('offset', '0%').attr('stop-color', '#3e6454');
-    hubGrad.append('stop').attr('offset', '100%').attr('stop-color', '#1f3529');
-
-    hubG.append('circle')
-      .attr('r', hubRadius)
-      .attr('class', 'node-circle')
-      .attr('fill', 'url(#hub-grad)')
-      .attr('stroke', 'rgba(200, 155, 90, 0.5)')
-      .attr('stroke-width', 2)
-      .attr('filter', 'url(#shadow)');
-
-    hubG.append('circle')
-      .attr('r', 115)
-      .attr('fill', 'none')
-      .attr('stroke', 'rgba(200, 155, 90, 0.25)')
-      .attr('stroke-width', 1);
-
-    hubG.append('text')
-      .attr('class', 'hub-title')
-      .attr('y', 10)
-      .text('LifeSight');
-
+    hubEnter.append('circle').attr('r', 115).attr('fill', 'none').attr('stroke', 'rgba(200, 155, 90, 0.25)').attr('stroke-width', 1);
+    hubEnter.append('text').attr('class', 'hub-title').attr('y', 12).text('LifeSight');
     [-1, 1].forEach(dir => {
-      hubG.append('circle')
-        .attr('cx', dir * 75).attr('cy', 60)
-        .attr('r', 2)
-        .attr('fill', '#c89b5a')
-        .attr('fill-opacity', 0.8);
+      hubEnter.append('circle').attr('cx', dir * 80).attr('cy', 62).attr('r', 2).attr('fill', '#c89b5a').attr('fill-opacity', 0.8);
     });
 
-    // ── NODES ──
-    ONBOARD.forEach(n => drawStepNode(n, PHASES.onboard.hex));
-    ANALYTICS.forEach(n => drawStepNode(n, PHASES.analytics.hex));
+    updateSelectionUI();
   }
 
-  function drawStepNode(n, color) {
-    const p = POS[n.id];
-    const isActive = activeId === n.id;
+  // ── ENGINE TICK ───────────────────────────────────────────────────────
+  d3.timer((elapsed) => {
+    ALL_STEPS.forEach((d, i) => {
+      if (!d.dragging) {
+        const floatX = Math.sin(elapsed / 1500 + i) * 10;
+        const floatY = Math.cos(elapsed / 1800 + i * 1.5) * 10;
+        d.x += (d.baseX + floatX - d.x) * 0.1;
+        d.y += (d.baseY + floatY - d.y) * 0.1;
+      }
+    });
 
-    const g = nodeLayer.append('g')
-      .attr('class', 'node-hit')
-      .attr('transform', `translate(${p.x}, ${p.y})`)
-      .on('click', () => selectStep(n));
+    nodeLayer.selectAll('.node-group').attr('transform', d => `translate(${d.x}, ${d.y})`);
 
-    g.append('circle')
-      .attr('r', 52)
-      .attr('fill', 'none')
-      .attr('stroke', color)
-      .attr('stroke-width', 1.5)
-      .attr('stroke-dasharray', '3 5')
-      .attr('opacity', isActive ? 0.9 : 0);
+    const pathFn = d => calculatePathCurve(d);
+    edgeLayer.selectAll('.link-path').attr('d', pathFn);
+    edgeLayer.selectAll('.link-flow').attr('d', pathFn);
+    loopLayer.selectAll('.link-path').attr('d', pathFn);
+    loopLayer.selectAll('.link-flow').attr('d', pathFn);
+  });
 
-    const gradId = `grad-${n.id}`;
-    if (!document.getElementById(gradId)) {
-      const grad = defs.append('radialGradient')
-        .attr('id', gradId)
-        .attr('cx', '40%').attr('cy', '35%').attr('r', '65%');
-      grad.append('stop').attr('offset', '0%')
-        .attr('stop-color', d3.color(color).brighter(0.6).formatHex());
-      grad.append('stop').attr('offset', '100%')
-        .attr('stop-color', d3.color(color).darker(0.6).formatHex());
+  function calculatePathCurve(link) {
+    const s = ALL_STEPS.find(n => n.id === link.s);
+    const t = ALL_STEPS.find(n => n.id === link.t);
+    const hub = ALL_STEPS.find(n => n.id === 'lifesight');
+    
+    const rS = s.id === 'lifesight' ? 140 : 45;
+    const rT = t.id === 'lifesight' ? 145 : 55;
+    
+    const dx = t.x - s.x;
+    const dy = t.y - s.y;
+    const dist = Math.sqrt(dx*dx + dy*dy) || 1;
+    
+    const sx = s.x + (dx/dist) * rS;
+    const sy = s.y + (dy/dist) * rS;
+    const tx = t.x - (dx/dist) * rT;
+    const ty = t.y - (dy/dist) * rT;
+
+    // Explicit Inner Curve Bypass Loop
+    if (link.reverse) {
+       const midX = (sx + tx) / 2;
+       const midY = (sy + ty) / 2;
+       const nx = midX - hub.x;
+       const ny = midY - hub.y;
+       const ndist = Math.sqrt(nx*nx + ny*ny) || 1;
+       // Pulls the curve inwards toward the hub, avoiding Node 05
+       const cx = midX - (nx/ndist) * 90; 
+       const cy = midY - (ny/ndist) * 90;
+       return `M${sx},${sy} Q${cx},${cy} ${tx},${ty}`;
     }
 
-    g.append('circle')
-      .attr('r', 40)
-      .attr('fill', 'var(--paper)')
-      .attr('filter', 'url(#shadow)');
-
-    g.append('circle')
-      .attr('r', 40)
-      .attr('class', 'node-circle')
-      .attr('fill', 'none')
-      .attr('stroke', color)
-      .attr('stroke-width', isActive ? 3 : 2)
-      .attr('stroke-opacity', isActive ? 1 : 0.85);
-
-    g.append('circle')
-      .attr('r', 32)
-      .attr('fill', `url(#${gradId})`)
-      .attr('fill-opacity', 0.15);
-
-    g.append('text')
-      .attr('class', 'node-num')
-      .attr('y', 4)
-      .attr('fill', color)
-      .text(n.num);
-
-    labelLayer.append('text')
-      .attr('class', 'node-label')
-      .attr('x', p.x).attr('y', p.y + 65)
-      .text(n.name);
+    // Direct / Less curved links for the rest
+    const midX = (sx + tx) / 2;
+    const midY = (sy + ty) / 2;
+    
+    // Very tiny outward bump to prevent rigid straight lines crossing inner elements
+    const nx = midX - hub.x;
+    const ny = midY - hub.y;
+    const ndist = Math.sqrt(nx*nx + ny*ny) || 1;
+    const cx = midX + (nx/ndist) * 15; 
+    const cy = midY + (ny/ndist) * 15;
+    
+    return `M${sx},${sy} Q${cx},${cy} ${tx},${ty}`;
   }
 
-  // ── PANEL ─────────────────────────────────────────────────────────────
+  // ── UI PANEL LOGIC ────────────────────────────────────────────────────
   const panelEl = document.getElementById('panel');
   const accent = panelEl.querySelector('.panel-accent');
 
+  function updateSelectionUI() {
+    nodeLayer.selectAll('.ring-select').attr('opacity', d => d.id === activeId ? 0.9 : 0);
+    nodeLayer.selectAll('.ring-main').attr('stroke-width', d => d.id === activeId ? 3.5 : 2);
+  }
+
   function selectStep(step) {
     activeId = step.id;
+    updateSelectionUI();
     const phase = PHASES[step.phase];
     const accentColor = phase.hex;
 
@@ -950,7 +855,6 @@
     document.getElementById('p-crumb').textContent = step.phase_label || phase.label;
     document.getElementById('p-crumb').style.color = accentColor;
     document.getElementById('p-title').innerHTML = step.title;
-    document.getElementById('p-phase').textContent = phase.label.toLowerCase();
     document.getElementById('p-body').innerHTML = `<p>${step.body}</p>`;
 
     const detailsEl = document.getElementById('p-details');
@@ -971,41 +875,41 @@
       asideEl.style.display = 'none';
     }
 
-    const idx = ALL_STEPS.findIndex(s => s.id === step.id);
-    document.getElementById('p-nav').textContent =
-      step.id === 'lifesight'
-        ? 'the hub · where onboarding becomes insight'
-        : `step ${String(idx + 1).padStart(2, '0')} · of · ${String(ALL_STEPS.length).padStart(2, '0')}`;
+    let navText = '';
+    if (step.id === 'lifesight') {
+       navText = 'the hub · where onboarding becomes insight';
+    } else if (step.id.startsWith('template')) {
+       navText = `step 01 · of · 11`;
+    } else {
+       const idx = ALL_STEPS.findIndex(s => s.id === step.id) - 1; 
+       navText = `step ${String(idx + 1).padStart(2, '0')} · of · 11`;
+    }
+    document.getElementById('p-nav').textContent = navText;
 
     panelEl.classList.remove('hidden');
-    draw();
   }
 
   function closePanel() {
     activeId = null;
+    updateSelectionUI();
     panelEl.classList.add('hidden');
-    draw();
   }
 
   document.getElementById('p-close').addEventListener('click', closePanel);
-  document.addEventListener('keydown', e => {
-    if (e.key === 'Escape') closePanel();
-  });
+  document.addEventListener('keydown', e => { if (e.key === 'Escape') closePanel(); });
 
-  // ── INIT ──────────────────────────────────────────────────────────────
-  layout();
+  // ── BOOTSTRAP ─────────────────────────────────────────────────────────
+  initLayout();
   draw();
-
   setTimeout(() => selectStep(HUB), 600);
 
-  // ── RESIZE ────────────────────────────────────────────────────────────
   window.addEventListener('resize', () => {
     W = window.innerWidth;
     H = window.innerHeight;
     svg.attr('viewBox', [0, 0, W, H]);
-    layout();
-    draw();
+    initLayout(); 
+    draw();       
   });
 </script>
-</body>
-</html>
+
+</body></html>
