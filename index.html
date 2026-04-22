@@ -336,11 +336,11 @@
     </div>
 
     <div>
-      <div class="section-label">Working detail</div>
+      <div class="section-label" id="p-details-label">Working detail</div>
       <div id="p-details"></div>
     </div>
 
-    <div class="panel-output">
+    <div class="panel-output" id="p-output-container">
       <div class="output-label">Hand-off</div>
       <div class="output-val" id="p-output"></div>
     </div>
@@ -369,150 +369,131 @@
       details: [
         'Pre-formatted columns, field definitions, and validation hints baked in',
         'Reduces back-and-forth — clients know exactly what we need',
-        'Versioned so we can track template changes across onboardings',
+        'Versioned so we can track template changes across onboardings'
       ],
       output: 'A populated standard template'
     },
     {
       id: 'template-custom', num: '01B', phase: 'onboard', name: 'Custom Format',
       title: 'Flexible Mapping', phase_label: 'Step 1B · Intake',
-      body: 'If a client pushes back on the template, we can take their format instead and do the mapping on our side. It slows us slightly, but onboarding shouldn\'t hinge on a spreadsheet layout.',
+      body: 'If a client pushes back on the template, we can take their format instead and do the mapping on our side.',
       details: [
-        'Accommodates native client exports without friction',
-        'Mapping happens internally inside DVS instead of by the client',
-        'Ensures onboarding momentum isn\'t blocked by formatting rules'
+        'Accommodates native client/admin exports',
+        'Mapping happens internally inside DVS instead of by the client'
       ],
       output: 'A raw client data file'
     },
     {
       id: 'datalink', num: '02', phase: 'onboard', name: 'DataLink',
       title: 'Secure Transfer', phase_label: 'Step 2 · Transfer',
-      body: 'The client sends their file through DataLink — our secure transfer channel — keeping the whole exchange inside a protected environment. (We\'re also open to alternatives where a client has an existing secure setup.)',
+      body: 'The client sends their file through DataLink, keeping the whole exchange inside a protected environment. (Alternatives may apply.)',
       details: [
-        'Encrypted in transit, access logged end-to-end',
-        'No file ever arrives by email or unmanaged share',
-        'Audit trail from the moment the client hits send',
+        'Encrypted in transit',
+        'No file ever arrives by email or unmanaged share'
       ],
       output: 'A received, logged client submission'
     },
     {
       id: 'tct', num: '03', phase: 'onboard', name: 'TCT Storage',
-      title: 'A home for the raw file', phase_label: 'Step 3 · Storage',
-      body: 'Every client gets a dedicated folder on TCT. The original submission lands here untouched — so we always have the source of truth to return to, no matter what happens downstream.',
+      title: 'TCT Folder', phase_label: 'Step 3 · Storage',
+      body: 'Every client gets a dedicated folder on TCT. We store the original submission here untouched.',
       details: [
-        'One folder per client, access-controlled',
         'Raw file preserved exactly as received',
-        'Becomes the audit anchor for everything that follows',
+        'Becomes the audit anchor for everything that follows'
       ],
       output: 'A safely stored, untouched raw file'
     },
     {
       id: 'dvs-import', num: '04', phase: 'onboard', name: 'DVS Import',
       title: 'Into the validation engine', phase_label: 'Step 4 · Import',
-      body: 'The raw file is pulled into DVS — our data validation system — configured specifically for LifeSight. This is where file structure meets scheme logic: we map the client\'s columns to the fields LifeSight expects.',
+      body: 'The raw file is pulled into DVS (Data Validation System) - configured specifically for LifeSight. We map the client\'s columns to the fields LifeSight expects.',
       aside: '<strong>One-time setup:</strong> the LifeSight-ready DVS configuration gets built once and reused across every client onboarding.',
       details: [
         'Field-level mapping to LifeSight\'s input schema',
         'Handles both template submissions and client-native formats',
-        'Readies the data for rule-based validation',
+        'Readies the data for rule-based validation'
       ],
       output: 'A DVS-loaded, mapped dataset'
     },
     {
-      id: 'checks', num: '05', phase: 'onboard', name: 'Quality Checks',
-      title: 'The heart of validation', phase_label: 'Step 5 · Validate',
-      body: 'A library of reasonableness and quality rules runs across every record. We\'re not just checking if data exists — we\'re asking whether it makes sense in the context of the scheme.',
+      id: 'checks', num: '05', phase: 'onboard', name: 'Data Checks',
+      title: 'Checking for Consistency', phase_label: 'Step 5 · Validate',
+      body: 'A library of reasonableness and quality rules runs across every record.',
       details: [
         'Ranges, mandatory fields, referential integrity',
         'Cross-field logic (e.g. joining dates vs birth dates)',
         'Rules tailored to LifeSight\'s scheme requirements',
-        'Failures tagged with descriptive error codes, not cryptic flags',
+        'Failures tagged with descriptive error codes'
       ],
       output: 'Records split into clean & flagged'
     },
     {
       id: 'queries', num: '06', phase: 'onboard', name: 'Queries File',
-      title: 'Back to the client, honestly', phase_label: 'Step 6 · Resolve',
-      body: 'DVS produces a queries file — every flagged record, explained in plain language. We send it to the client, they respond with corrections or confirmations, and the conversation goes on until the file comes back clean.',
-      aside: '<strong>A queries file is generated every time</strong>, even if empty. It\'s a record that the check ran, which matters for audit.',
+      title: 'Data Queries', phase_label: 'Step 6 · Resolve',
+      body: 'We extract a queries file from DVS and we send it to the client. They respond with corrections or confirmations, until the data is fully aligned.',
       details: [
-        'Each query carries the rule it failed and a plain-English description',
-        'Client returns a resolution file; we apply the corrections in DVS',
-        'Iterative — sometimes a file cycles two or three times before landing',
+        'Client returns a resolution file or informs us what the changes should; and we apply the corrections in DVS'
       ],
       output: 'A validated, client-confirmed dataset'
     },
     {
-      id: 'lifesight-extract', num: '07', phase: 'onboard', name: 'LifeSight Report',
-      title: 'Ready to go home', phase_label: 'Step 7 · Export',
-      body: 'Once the data is clean, DVS produces a LifeSight-ready report — formatted precisely to what LifeSight needs at import. No more transformations, no more questions.',
+      id: 'lifesight-extract', num: '07', phase: 'onboard', name: 'DVS Extract',
+      title: 'Extract ready to import into LifeSight', phase_label: 'Step 7 · Export',
+      body: 'Once the data is clean, DVS produces a LifeSight-ready report — formatted precisely to what LifeSight needs at import.',
       details: [
-        'Schema-perfect export aligned to LifeSight\'s ingestion spec',
-        'One-shot import, no manual reformatting downstream',
-        'The moment the onboarding becomes real data in the system',
+        'Data Export aligned to LifeSight\'s needs'
       ],
       output: 'LifeSight-ready import file'
-    },
+    }
   ];
 
   const HUB = {
     id: 'lifesight', phase: 'hub', name: 'LifeSight',
-    title: 'The single source of truth', phase_label: 'Central · Platform',
-    body: 'Everything before this point is about getting data in cleanly. Everything after is about putting it to work. LifeSight holds the authoritative record for every scheme and member — the hub that onboarding feeds and analytics draws from.',
-    details: [
-      'Atomic updates: a change either fully commits or fully reverts',
-      'Complete change log for audit and reconciliation',
-      'One record per client, always current, always trusted',
-      'The pivot point between <em>getting data right</em> and <em>getting value out</em>',
-    ],
-    output: 'Authoritative LifeSight dataset'
+    title: 'The Core Program', phase_label: 'Central · Platform',
+    body: 'LifeSight - the core program.',
+    details: [],
+    output: ''
   };
 
   const ANALYTICS = [
     {
       id: 'extract', num: '08', phase: 'analytics', name: 'Data Extract',
       title: 'Pulling the latest view', phase_label: 'Step 8 · Extract',
-      body: 'A scheduled job extracts the current LifeSight dataset and drops it into a dedicated TCT folder. Nothing manual, nothing forgotten — the extracts just appear, on time.',
+      body: 'Once needed (or as scheduled), we create extracts from the current LifeSight dataset and drop it into a dedicated TCT folder.',
       details: [
-        'Incremental where possible — dashboards stay fresh without full rebuilds',
-        'Shape-transformed into the dimensional model Power BI expects',
-        'Stored in TCT for traceability and reproducibility',
+        'If we automate this process, the analytics will stay fresh',
+        'Shape-transformed into the schema Power BI expects',
+        'Stored in TCT for traceability and reproducibility'
       ],
       output: 'Reporting-ready extract in TCT'
     },
     {
       id: 'powerbi', num: '09', phase: 'analytics', name: 'Power BI',
-      title: 'The dashboards wake up', phase_label: 'Step 9 · Report',
-      body: 'Power BI is pointed at the TCT folder and refreshes automatically. No one logs in to press a button — if there\'s new data, the dashboards already have it.',
+      title: 'PowerBI integration', phase_label: 'Step 9 · Report',
+      body: 'Power BI is pointed at the TCT folder and refreshes automatically.',
       details: [
-        'Refresh schedule tied to the extract cadence',
         'Stakeholders get near real-time visibility',
-        'Folder-based ingestion makes the pipeline self-healing',
+        'Folder-based ingestion makes the pipeline self-healing'
       ],
       output: 'Live, current dashboards'
     },
     {
       id: 'dashboard', num: '10', phase: 'analytics', name: 'Dashboards',
-      title: 'Built for us, built for them', phase_label: 'Step 10 · Surface',
-      body: 'We design the dashboards around what the team and the client actually want to see — not a generic template. KPIs, data quality flags, scheme-level views, pipeline health.',
-      details: [
-        'Custom views for internal teams and senior leadership',
-        'Data quality surfaced alongside business metrics',
-        'Alert thresholds for anomalies and processing lags',
-      ],
+      title: 'The Dashboards', phase_label: 'Step 10 · Surface',
+      body: 'We design the dashboards around what the team and the client actually want to see.',
+      details: [],
       output: 'Curated, decision-ready views'
     },
     {
       id: 'analysis', num: '11', phase: 'analytics', name: 'Analysis',
       title: 'Where the value lands', phase_label: 'Step 11 · Insight',
-      body: 'The final step — and the whole point. Analysts read the dashboards, interpret the signals, and turn the data into decisions. Everything upstream exists to make this part clean and trustworthy.',
+      body: 'We read the dashboards, interpret the signals, and turn the data into decisions.',
       details: [
         'Trend analysis across schemes and cohorts',
-        'Data quality feedback loops back into the onboarding rules',
-        'Insights inform both WTW strategy and client conversations',
+        'Insights inform both WTW strategy and client conversations'
       ],
       output: 'Decisions backed by trusted data'
-    },
+    }
   ];
 
   const ALL_STEPS = [...ONBOARD, HUB, ...ANALYTICS];
@@ -531,7 +512,7 @@
     { id: 'l10', s: 'extract', t: 'powerbi', type: 'analytics' },
     { id: 'l11', s: 'powerbi', t: 'dashboard', type: 'analytics' },
     { id: 'l12', s: 'dashboard', t: 'analysis', type: 'analytics' },
-    { id: 'l13', s: 'queries', t: 'dvs-import', type: 'onboard', reverse: true } // Inner curve bypass loop
+    { id: 'l13', s: 'queries', t: 'dvs-import', type: 'onboard', reverse: true } // Straight line bypass loop
   ];
 
   // ── SVG SETUP ─────────────────────────────────────────────────────────
@@ -671,7 +652,7 @@
         .attr('stroke-width', 2)
         .attr('marker-end', d => d.type === 'onboard' ? 'url(#arr-onboard)' : 'url(#arr-analytics)');
 
-    // -- Clean Inner Curve Bypass Loop (6 to 4) --
+    // -- Clean Straight Bypass Loop (6 to 4) --
     const loopLink = LINKS.filter(d => d.reverse);
     loopLayer.selectAll('.link-path').data(loopLink, d => d.id)
         .enter().append('path')
@@ -795,17 +776,9 @@
     const tx = t.x - (dx/dist) * rT;
     const ty = t.y - (dy/dist) * rT;
 
-    // Explicit Inner Curve Bypass Loop
+    // Explicit Straight Line Bypass Loop
     if (link.reverse) {
-       const midX = (sx + tx) / 2;
-       const midY = (sy + ty) / 2;
-       const nx = midX - hub.x;
-       const ny = midY - hub.y;
-       const ndist = Math.sqrt(nx*nx + ny*ny) || 1;
-       // Pulls the curve inwards toward the hub, avoiding Node 05
-       const cx = midX - (nx/ndist) * 90; 
-       const cy = midY - (ny/ndist) * 90;
-       return `M${sx},${sy} Q${cx},${cy} ${tx},${ty}`;
+       return `M${sx},${sy} L${tx},${ty}`;
     }
 
     // Direct / Less curved links for the rest
@@ -845,15 +818,32 @@
     document.getElementById('p-title').innerHTML = step.title;
     document.getElementById('p-body').innerHTML = `<p>${step.body}</p>`;
 
+    // Toggle working details dynamically
+    const detailsLabel = document.getElementById('p-details-label');
     const detailsEl = document.getElementById('p-details');
-    detailsEl.innerHTML = step.details.map((d, i) =>
-      `<div class="panel-detail">
-        <span class="detail-num">${String(i + 1).padStart(2, '0')}</span>
-        <span class="detail-text">${d}</span>
-      </div>`
-    ).join('');
+    if (step.details && step.details.length > 0) {
+      detailsLabel.style.display = 'block';
+      detailsEl.innerHTML = step.details.map((d, i) =>
+        `<div class="panel-detail">
+          <span class="detail-num">${String(i + 1).padStart(2, '0')}</span>
+          <span class="detail-text">${d}</span>
+        </div>`
+      ).join('');
+    } else {
+      detailsLabel.style.display = 'none';
+      detailsEl.innerHTML = '';
+    }
 
-    document.getElementById('p-output').textContent = step.output;
+    // Toggle hand-off dynamically
+    const outputContainer = document.getElementById('p-output-container');
+    const outputEl = document.getElementById('p-output');
+    if (step.output) {
+      outputContainer.style.display = 'block';
+      outputEl.textContent = step.output;
+    } else {
+      outputContainer.style.display = 'none';
+      outputEl.textContent = '';
+    }
 
     const asideEl = document.getElementById('p-aside');
     if (step.aside) {
