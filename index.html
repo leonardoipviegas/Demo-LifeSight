@@ -57,9 +57,11 @@
     background: linear-gradient(to bottom, var(--bg) 70%, transparent);
     z-index: 30;
     display: flex; align-items: flex-end; justify-content: space-between;
+    pointer-events: none; /* Let clicks pass through to D3 canvas */
   }
   .title-block {
     display: flex; align-items: baseline; gap: 14px;
+    pointer-events: auto;
   }
   .mark {
     font-family: 'Fraunces', serif;
@@ -73,11 +75,6 @@
     font-weight: 600;
     font-style: normal;
   }
-  .divider-dot {
-    width: 3px; height: 3px; border-radius: 50%;
-    background: var(--ink-faint);
-    margin-bottom: 4px;
-  }
   .subtitle {
     font-family: 'JetBrains Mono', monospace;
     font-size: 0.68rem;
@@ -89,6 +86,7 @@
   }
   .header-right {
     display: flex; flex-direction: column; align-items: flex-end; gap: 2px;
+    pointer-events: auto;
   }
   .stamp {
     font-family: 'JetBrains Mono', monospace;
@@ -103,7 +101,8 @@
   }
 
   /* ── CANVAS ─────────────────────────────────────────── */
-  #canvas { position: absolute; inset: 0; padding-top: 68px; z-index: 2; }
+  #canvas { position: absolute; inset: 0; z-index: 2; cursor: grab; }
+  #canvas:active { cursor: grabbing; }
   svg { width: 100%; height: 100%; display: block; }
 
   /* ── LEGEND (bottom left) ───────────────────────────── */
@@ -117,22 +116,15 @@
     letter-spacing: 0.5px;
     display: flex; flex-direction: column; gap: 6px;
     max-width: 260px;
+    pointer-events: none;
   }
   .legend-row { display: flex; align-items: center; gap: 8px; }
   .legend-swatch { width: 10px; height: 10px; border-radius: 2px; flex-shrink: 0; }
-  .legend-hint {
-    font-style: italic;
-    font-family: 'Fraunces', serif;
-    font-size: 0.78rem;
-    color: var(--ink-soft);
-    margin-top: 4px;
-    line-height: 1.4;
-  }
 
   /* ── SVG TEXT STYLES ────────────────────────────────── */
   .phase-label {
     font-family: 'JetBrains Mono', monospace;
-    font-size: 10px;
+    font-size: 12px;
     font-weight: 500;
     letter-spacing: 2.5px;
     text-transform: uppercase;
@@ -141,32 +133,22 @@
   .phase-num {
     font-family: 'Fraunces', serif;
     font-style: italic;
-    font-size: 13px;
+    font-size: 15px;
     font-weight: 400;
     pointer-events: none;
   }
   .node-label {
     font-family: 'Fraunces', serif;
-    font-size: 13px;
+    font-size: 15px;
     font-weight: 500;
     fill: var(--ink);
     text-anchor: middle;
     pointer-events: none;
     letter-spacing: -0.2px;
   }
-  .node-sub {
-    font-family: 'JetBrains Mono', monospace;
-    font-size: 8.5px;
-    font-weight: 400;
-    fill: var(--ink-faint);
-    text-anchor: middle;
-    pointer-events: none;
-    letter-spacing: 0.5px;
-    text-transform: uppercase;
-  }
   .node-num {
     font-family: 'JetBrains Mono', monospace;
-    font-size: 9px;
+    font-size: 11px;
     font-weight: 500;
     fill: var(--ink-faint);
     text-anchor: middle;
@@ -176,7 +158,7 @@
   .edge-label {
     font-family: 'Fraunces', serif;
     font-style: italic;
-    font-size: 10px;
+    font-size: 12px;
     font-weight: 400;
     fill: var(--ink-faint);
     text-anchor: middle;
@@ -184,7 +166,7 @@
   }
   .hub-title {
     font-family: 'Fraunces', serif;
-    font-size: 28px;
+    font-size: 38px;
     font-weight: 500;
     font-style: italic;
     fill: white;
@@ -192,34 +174,16 @@
     pointer-events: none;
     letter-spacing: -0.5px;
   }
-  .hub-sub {
-    font-family: 'JetBrains Mono', monospace;
-    font-size: 8.5px;
-    font-weight: 400;
-    fill: rgba(255,255,255,0.6);
-    text-anchor: middle;
-    pointer-events: none;
-    letter-spacing: 2px;
-    text-transform: uppercase;
-  }
-  .branch-label {
-    font-family: 'Fraunces', serif;
-    font-style: italic;
-    font-size: 11px;
-    font-weight: 400;
-    fill: var(--ink-soft);
-    pointer-events: none;
-  }
 
   /* Animated flow on edges */
   .flow {
-    stroke-dasharray: 2 6;
+    stroke-dasharray: 3 9;
     animation: dash 3s linear infinite;
   }
   @keyframes dash { to { stroke-dashoffset: -24; } }
 
   .flow-reverse {
-    stroke-dasharray: 2 6;
+    stroke-dasharray: 3 9;
     animation: dash-rev 3s linear infinite;
   }
   @keyframes dash-rev { to { stroke-dashoffset: 24; } }
@@ -232,7 +196,13 @@
   }
   @keyframes pulse {
     0%, 100% { transform: scale(1); opacity: 0.15; }
-    50% { transform: scale(1.08); opacity: 0.05; }
+    50% { transform: scale(1.06); opacity: 0.05; }
+  }
+
+  /* Hover states on nodes */
+  .node-hit { cursor: pointer; }
+  .node-hit:hover .node-circle {
+    filter: brightness(1.05);
   }
 
   /* ── PANEL ──────────────────────────────────────────── */
@@ -295,10 +265,7 @@
     margin-top: 2px;
   }
 
-  .rule {
-    height: 1px;
-    background: var(--rule);
-  }
+  .rule { height: 1px; background: var(--rule); }
   .rule-dotted {
     height: 1px;
     background-image: linear-gradient(to right, var(--rule) 50%, transparent 50%);
@@ -321,15 +288,10 @@
     line-height: 1.55;
     color: var(--ink-soft);
   }
-
-  .panel-body p + p {
-    margin-top: 10px;
-  }
+  .panel-body p + p { margin-top: 10px; }
 
   .panel-detail {
-    display: flex;
-    gap: 14px;
-    margin-bottom: 12px;
+    display: flex; gap: 14px; margin-bottom: 12px;
   }
   .detail-num {
     font-family: 'Fraunces', serif;
@@ -379,11 +341,7 @@
     border-radius: 2px;
     line-height: 1.5;
   }
-  .panel-aside strong {
-    font-style: normal;
-    font-weight: 500;
-    color: var(--c-accent);
-  }
+  .panel-aside strong { font-style: normal; font-weight: 500; color: var(--c-accent); }
 
   .panel-foot {
     padding: 16px 32px 22px;
@@ -420,44 +378,7 @@
   .panel-inner::-webkit-scrollbar-track { background: transparent; }
   .panel-inner::-webkit-scrollbar-thumb { background: var(--rule); border-radius: 3px; }
 
-  /* Corner ornaments */
-  .corner {
-    position: fixed;
-    width: 28px; height: 28px;
-    z-index: 5;
-    pointer-events: none;
-  }
-  .corner::before, .corner::after {
-    content: '';
-    position: absolute;
-    background: var(--ink-faint);
-    opacity: 0.35;
-  }
-  .corner.tl { top: 62px; left: 22px; }
-  .corner.tl::before { top: 0; left: 0; width: 12px; height: 1px; }
-  .corner.tl::after { top: 0; left: 0; width: 1px; height: 12px; }
-
-  .corner.tr { top: 62px; right: 22px; }
-  .corner.tr::before { top: 0; right: 0; width: 12px; height: 1px; }
-  .corner.tr::after { top: 0; right: 0; width: 1px; height: 12px; }
-
-  .corner.bl { bottom: 18px; left: 22px; }
-  .corner.bl::before { bottom: 0; left: 0; width: 12px; height: 1px; }
-  .corner.bl::after { bottom: 0; left: 0; width: 1px; height: 12px; }
-
-  .corner.br { bottom: 18px; right: 22px; }
-  .corner.br::before { bottom: 0; right: 0; width: 12px; height: 1px; }
-  .corner.br::after { bottom: 0; right: 0; width: 1px; height: 12px; }
-
-  /* Hover states on nodes */
-  .node-hit { cursor: pointer; }
-  .node-hit:hover .node-circle {
-    filter: brightness(1.03);
-  }
-
-  @media (max-width: 1100px) {
-    #panel { width: 340px; }
-  }
+  @media (max-width: 1100px) { #panel { width: 340px; } }
 </style>
 </head>
 <body>
@@ -471,14 +392,9 @@
   </div>
   <div class="header-right">
     <span class="stamp">from <strong>client submission</strong> to <strong>live insight</strong></span>
-    <span class="stamp" style="font-size: 0.56rem; opacity: 0.6;">click any step to explore</span>
+    <span class="stamp" style="font-size: 0.56rem; opacity: 0.6;">click to explore · scroll to zoom</span>
   </div>
 </header>
-
-<div class="corner tl"></div>
-<div class="corner tr"></div>
-<div class="corner bl"></div>
-<div class="corner br"></div>
 
 <div id="canvas"></div>
 
@@ -533,21 +449,15 @@
 <script>
   // ── MODEL ─────────────────────────────────────────────────────────────
   const PHASES = {
-    onboard:   { label: 'Onboarding & Updates', color: 'var(--c-onboard)',  hex: '#b8593e' },
-    hub:       { label: 'LifeSight',            color: 'var(--c-hub)',      hex: '#2d4a3e' },
+    onboard:   { label: 'Onboarding & Updates', color: 'var(--c-onboard)',   hex: '#b8593e' },
+    hub:       { label: 'LifeSight',            color: 'var(--c-hub)',       hex: '#2d4a3e' },
     analytics: { label: 'Analytics',            color: 'var(--c-analytics)', hex: '#3a5a78' },
   };
 
-  // Onboarding arc (arranged on an arc flowing into the hub from the left)
   const ONBOARD = [
     {
-      id: 'template',
-      num: '01',
-      phase: 'onboard',
-      name: 'The Template',
-      sub: 'Client Submission',
-      title: 'A shared starting line',
-      phase_label: 'Step 1 · Intake',
+      id: 'template', num: '01', phase: 'onboard', name: 'The Template',
+      title: 'A shared starting line', phase_label: 'Step 1 · Intake',
       body: 'The client fills in their member and scheme data using our LifeSight template — a structure we\'ve already tuned for everything downstream. It\'s the fastest route in.',
       aside: '<strong>Flexibility:</strong> if a client pushes back on the template, we can take their format instead and do the mapping on our side. It slows us slightly, but onboarding shouldn\'t hinge on a spreadsheet layout.',
       details: [
@@ -558,13 +468,8 @@
       output: 'A populated client data file'
     },
     {
-      id: 'datalink',
-      num: '02',
-      phase: 'onboard',
-      name: 'DataLink',
-      sub: 'Secure Transfer',
-      title: 'Getting the data to us, safely',
-      phase_label: 'Step 2 · Transfer',
+      id: 'datalink', num: '02', phase: 'onboard', name: 'DataLink',
+      title: 'Getting the data to us, safely', phase_label: 'Step 2 · Transfer',
       body: 'The client sends their file through DataLink — our secure transfer channel — keeping the whole exchange inside a protected environment. (We\'re also open to alternatives where a client has an existing secure setup.)',
       details: [
         'Encrypted in transit, access logged end-to-end',
@@ -574,13 +479,8 @@
       output: 'A received, logged client submission'
     },
     {
-      id: 'tct',
-      num: '03',
-      phase: 'onboard',
-      name: 'TCT Storage',
-      sub: 'Raw Data Folder',
-      title: 'A home for the raw file',
-      phase_label: 'Step 3 · Storage',
+      id: 'tct', num: '03', phase: 'onboard', name: 'TCT Storage',
+      title: 'A home for the raw file', phase_label: 'Step 3 · Storage',
       body: 'Every client gets a dedicated folder on TCT. The original submission lands here untouched — so we always have the source of truth to return to, no matter what happens downstream.',
       details: [
         'One folder per client, access-controlled',
@@ -590,13 +490,8 @@
       output: 'A safely stored, untouched raw file'
     },
     {
-      id: 'dvs-import',
-      num: '04',
-      phase: 'onboard',
-      name: 'DVS Import',
-      sub: 'Structure Mapping',
-      title: 'Into the validation engine',
-      phase_label: 'Step 4 · Import',
+      id: 'dvs-import', num: '04', phase: 'onboard', name: 'DVS Import',
+      title: 'Into the validation engine', phase_label: 'Step 4 · Import',
       body: 'The raw file is pulled into DVS — our data validation system — configured specifically for LifeSight. This is where file structure meets scheme logic: we map the client\'s columns to the fields LifeSight expects.',
       aside: '<strong>One-time setup:</strong> the LifeSight-ready DVS configuration gets built once and reused across every client onboarding.',
       details: [
@@ -607,13 +502,8 @@
       output: 'A DVS-loaded, mapped dataset'
     },
     {
-      id: 'checks',
-      num: '05',
-      phase: 'onboard',
-      name: 'Quality Checks',
-      sub: 'Reasonableness Rules',
-      title: 'The heart of validation',
-      phase_label: 'Step 5 · Validate',
+      id: 'checks', num: '05', phase: 'onboard', name: 'Quality Checks',
+      title: 'The heart of validation', phase_label: 'Step 5 · Validate',
       body: 'A library of reasonableness and quality rules runs across every record. We\'re not just checking if data exists — we\'re asking whether it makes sense in the context of the scheme.',
       details: [
         'Ranges, mandatory fields, referential integrity',
@@ -624,13 +514,8 @@
       output: 'Records split into clean & flagged'
     },
     {
-      id: 'queries',
-      num: '06',
-      phase: 'onboard',
-      name: 'Queries File',
-      sub: 'Client Dialogue',
-      title: 'Back to the client, honestly',
-      phase_label: 'Step 6 · Resolve',
+      id: 'queries', num: '06', phase: 'onboard', name: 'Queries File',
+      title: 'Back to the client, honestly', phase_label: 'Step 6 · Resolve',
       body: 'DVS produces a queries file — every flagged record, explained in plain language. We send it to the client, they respond with corrections or confirmations, and the conversation goes on until the file comes back clean.',
       aside: '<strong>A queries file is generated every time</strong>, even if empty. It\'s a record that the check ran, which matters for audit.',
       details: [
@@ -641,13 +526,8 @@
       output: 'A validated, client-confirmed dataset'
     },
     {
-      id: 'lifesight-extract',
-      num: '07',
-      phase: 'onboard',
-      name: 'LifeSight Report',
-      sub: 'Import-ready',
-      title: 'Ready to go home',
-      phase_label: 'Step 7 · Export',
+      id: 'lifesight-extract', num: '07', phase: 'onboard', name: 'LifeSight Report',
+      title: 'Ready to go home', phase_label: 'Step 7 · Export',
       body: 'Once the data is clean, DVS produces a LifeSight-ready report — formatted precisely to what LifeSight needs at import. No more transformations, no more questions.',
       details: [
         'Schema-perfect export aligned to LifeSight\'s ingestion spec',
@@ -659,11 +539,8 @@
   ];
 
   const HUB = {
-    id: 'lifesight',
-    phase: 'hub',
-    name: 'LifeSight',
-    title: 'The single source of truth',
-    phase_label: 'Central · Platform',
+    id: 'lifesight', phase: 'hub', name: 'LifeSight',
+    title: 'The single source of truth', phase_label: 'Central · Platform',
     body: 'Everything before this point is about getting data in cleanly. Everything after is about putting it to work. LifeSight holds the authoritative record for every scheme and member — the hub that onboarding feeds and analytics draws from.',
     details: [
       'Atomic updates: a change either fully commits or fully reverts',
@@ -676,13 +553,8 @@
 
   const ANALYTICS = [
     {
-      id: 'extract',
-      num: '08',
-      phase: 'analytics',
-      name: 'Data Extract',
-      sub: 'Scheduled Pull',
-      title: 'Pulling the latest view',
-      phase_label: 'Step 8 · Extract',
+      id: 'extract', num: '08', phase: 'analytics', name: 'Data Extract',
+      title: 'Pulling the latest view', phase_label: 'Step 8 · Extract',
       body: 'A scheduled job extracts the current LifeSight dataset and drops it into a dedicated TCT folder. Nothing manual, nothing forgotten — the extracts just appear, on time.',
       details: [
         'Incremental where possible — dashboards stay fresh without full rebuilds',
@@ -692,13 +564,8 @@
       output: 'Reporting-ready extract in TCT'
     },
     {
-      id: 'powerbi',
-      num: '09',
-      phase: 'analytics',
-      name: 'Power BI',
-      sub: 'Automatic Refresh',
-      title: 'The dashboards wake up',
-      phase_label: 'Step 9 · Report',
+      id: 'powerbi', num: '09', phase: 'analytics', name: 'Power BI',
+      title: 'The dashboards wake up', phase_label: 'Step 9 · Report',
       body: 'Power BI is pointed at the TCT folder and refreshes automatically. No one logs in to press a button — if there\'s new data, the dashboards already have it.',
       details: [
         'Refresh schedule tied to the extract cadence',
@@ -708,13 +575,8 @@
       output: 'Live, current dashboards'
     },
     {
-      id: 'dashboard',
-      num: '10',
-      phase: 'analytics',
-      name: 'Dashboards',
-      sub: 'Tailored Views',
-      title: 'Built for us, built for them',
-      phase_label: 'Step 10 · Surface',
+      id: 'dashboard', num: '10', phase: 'analytics', name: 'Dashboards',
+      title: 'Built for us, built for them', phase_label: 'Step 10 · Surface',
       body: 'We design the dashboards around what the team and the client actually want to see — not a generic template. KPIs, data quality flags, scheme-level views, pipeline health.',
       details: [
         'Custom views for internal teams and senior leadership',
@@ -724,13 +586,8 @@
       output: 'Curated, decision-ready views'
     },
     {
-      id: 'analysis',
-      num: '11',
-      phase: 'analytics',
-      name: 'Analysis',
-      sub: 'Insight & Action',
-      title: 'Where the value lands',
-      phase_label: 'Step 11 · Insight',
+      id: 'analysis', num: '11', phase: 'analytics', name: 'Analysis',
+      title: 'Where the value lands', phase_label: 'Step 11 · Insight',
       body: 'The final step — and the whole point. Analysts read the dashboards, interpret the signals, and turn the data into decisions. Everything upstream exists to make this part clean and trustworthy.',
       details: [
         'Trend analysis across schemes and cohorts',
@@ -747,53 +604,44 @@
   let W = window.innerWidth;
   let H = window.innerHeight;
   let POS = {};
+  let hubRadius = 135;
+  let R = 0; // Layout circle radius
 
   function layout() {
     POS = {};
-    const leftPad = 80;
-    const rightPad = 420; // panel space + margin
-    const usableW = W - leftPad - rightPad;
-    const midY = 68 + (H - 68) / 2 + 10;
-
-    // Hub sits at 55% across
-    const hubX = leftPad + usableW * 0.52;
-    const hubY = midY;
+    const hubX = W / 2;
+    const hubY = H / 2 + 20; 
     POS['lifesight'] = { x: hubX, y: hubY };
 
-    // Onboarding: arc curving down-and-right into the hub from the upper-left
-    // 7 nodes arranged in a gentle arc
-    const onboardStartX = leftPad + 30;
-    const onboardEndX = hubX - 170;
-    const onboardCount = ONBOARD.length;
+    R = Math.min(W, H) * 0.36; 
+    const totalNodes = ONBOARD.length + ANALYTICS.length;
+    const startAngle = Math.PI; // start at left (9 o'clock)
 
-    ONBOARD.forEach((n, i) => {
-      const t = i / (onboardCount - 1);
-      // Horizontal progress
-      const x = onboardStartX + (onboardEndX - onboardStartX) * t;
-      // Vertical arc: dips down then rises into hub
-      const arcAmp = Math.min(160, (H - 68) * 0.22);
-      // sin curve that starts high, dips, ends at hub level
-      const y = midY - arcAmp * 0.4 + Math.sin(t * Math.PI) * arcAmp * 0.7 - (1 - t) * arcAmp * 0.3;
-      POS[n.id] = { x, y };
+    let currentIdx = 0;
+    ONBOARD.forEach(n => {
+      const angle = startAngle + (currentIdx / totalNodes) * 2 * Math.PI;
+      POS[n.id] = { x: hubX + R * Math.cos(angle), y: hubY + R * Math.sin(angle), angle: angle };
+      currentIdx++;
     });
 
-    // Analytics: fans out from the hub to the right
-    const analyticsStartX = hubX + 170;
-    const analyticsEndX = W - rightPad + 20;
-    const analyticsCount = ANALYTICS.length;
-
-    ANALYTICS.forEach((n, i) => {
-      const t = i / (analyticsCount - 1);
-      const x = analyticsStartX + (analyticsEndX - analyticsStartX) * t;
-      // Slight upward arc on the analytics side for visual balance
-      const arcAmp = Math.min(100, (H - 68) * 0.12);
-      const y = midY - Math.sin(t * Math.PI) * arcAmp * 0.5 - arcAmp * 0.1;
-      POS[n.id] = { x, y };
+    ANALYTICS.forEach(n => {
+      const angle = startAngle + (currentIdx / totalNodes) * 2 * Math.PI;
+      POS[n.id] = { x: hubX + R * Math.cos(angle), y: hubY + R * Math.sin(angle), angle: angle };
+      currentIdx++;
     });
   }
 
   // ── SVG SETUP ─────────────────────────────────────────────────────────
   const svg = d3.select('#canvas').append('svg').attr('viewBox', [0, 0, W, H]);
+  const mainGroup = svg.append('g');
+
+  const zoom = d3.zoom()
+    .scaleExtent([0.4, 3])
+    .on('zoom', (event) => {
+      mainGroup.attr('transform', event.transform);
+    });
+  svg.call(zoom);
+
   const defs = svg.append('defs');
 
   // Drop shadow
@@ -802,19 +650,9 @@
     .attr('x', '-50%').attr('y', '-50%')
     .attr('width', '200%').attr('height', '200%');
   shadow.append('feDropShadow')
-    .attr('dx', 0).attr('dy', 3)
-    .attr('stdDeviation', 4)
+    .attr('dx', 0).attr('dy', 4)
+    .attr('stdDeviation', 5)
     .attr('flood-color', 'rgba(26, 24, 20, 0.15)');
-
-  // Hub glow
-  const hubGlow = defs.append('filter')
-    .attr('id', 'hub-glow')
-    .attr('x', '-50%').attr('y', '-50%')
-    .attr('width', '200%').attr('height', '200%');
-  hubGlow.append('feGaussianBlur').attr('stdDeviation', 18).attr('result', 'blur');
-  const hubMerge = hubGlow.append('feMerge');
-  hubMerge.append('feMergeNode').attr('in', 'blur');
-  hubMerge.append('feMergeNode').attr('in', 'SourceGraphic');
 
   // Arrowheads
   ['onboard', 'analytics', 'loop'].forEach(phaseKey => {
@@ -825,24 +663,19 @@
       .attr('id', `arr-${phaseKey}`)
       .attr('viewBox', '0 -3 6 6')
       .attr('refX', 6).attr('refY', 0)
-      .attr('markerWidth', 5).attr('markerHeight', 5)
+      .attr('markerWidth', 6).attr('markerHeight', 6)
       .attr('orient', 'auto')
       .append('path')
       .attr('d', 'M0,-3L6,0L0,3Z')
       .attr('fill', color)
-      .attr('fill-opacity', 0.6);
-  });
-
-  // Radial gradients for nodes
-  Object.values(PHASES).forEach(p => {
-    const id = p.label.toLowerCase().replace(/\W+/g, '-');
+      .attr('fill-opacity', 0.8);
   });
 
   // Layers
-  const bgLayer = svg.append('g').attr('class', 'bg-layer');
-  const edgeLayer = svg.append('g').attr('class', 'edge-layer');
-  const nodeLayer = svg.append('g').attr('class', 'node-layer');
-  const labelLayer = svg.append('g').attr('class', 'label-layer');
+  const bgLayer = mainGroup.append('g').attr('class', 'bg-layer');
+  const edgeLayer = mainGroup.append('g').attr('class', 'edge-layer');
+  const nodeLayer = mainGroup.append('g').attr('class', 'node-layer');
+  const labelLayer = mainGroup.append('g').attr('class', 'label-layer');
 
   // ── DRAW ──────────────────────────────────────────────────────────────
   let activeId = null;
@@ -855,215 +688,155 @@
 
     const hub = POS['lifesight'];
 
-    // ── Background phase bands (very subtle) ──
-    // Onboarding band
-    const onboardXs = ONBOARD.map(n => POS[n.id].x);
-    const onboardYs = ONBOARD.map(n => POS[n.id].y);
-    const obMinX = Math.min(...onboardXs) - 70;
-    const obMaxX = Math.max(...onboardXs) + 70;
-    const obMinY = Math.min(...onboardYs) - 80;
-    const obMaxY = Math.max(...onboardYs) + 80;
-
-    // Phase labels - positioned above arcs
+    // ── Background phase labels ──
+    const labelObX = hub.x - R - 60;
+    const labelObY = hub.y - R + 20;
     labelLayer.append('text')
       .attr('class', 'phase-label')
-      .attr('x', obMinX + 12)
-      .attr('y', 90)
-      .attr('fill', '#b8593e')
-      .attr('opacity', 0.7)
+      .attr('x', labelObX).attr('y', labelObY)
+      .attr('fill', '#b8593e').attr('opacity', 0.8)
       .text('I · Onboarding & Updates');
-
     labelLayer.append('text')
       .attr('class', 'phase-num')
-      .attr('x', obMinX + 12)
-      .attr('y', 108)
+      .attr('x', labelObX).attr('y', labelObY + 22)
       .attr('fill', '#8a8373')
       .text('client submission through to import');
 
-    // Analytics phase label
-    const anaXs = ANALYTICS.map(n => POS[n.id].x);
-    const anaMinX = Math.min(...anaXs);
-    const anaMaxX = Math.max(...anaXs);
-
+    const labelAnX = hub.x + R - 140;
+    const labelAnY = hub.y + R + 30;
     labelLayer.append('text')
       .attr('class', 'phase-label')
-      .attr('x', anaMinX - 20)
-      .attr('y', 90)
-      .attr('fill', '#3a5a78')
-      .attr('opacity', 0.7)
+      .attr('x', labelAnX).attr('y', labelAnY)
+      .attr('fill', '#3a5a78').attr('opacity', 0.8)
       .text('II · Analytics & Reporting');
-
     labelLayer.append('text')
       .attr('class', 'phase-num')
-      .attr('x', anaMinX - 20)
-      .attr('y', 108)
+      .attr('x', labelAnX).attr('y', labelAnY + 22)
       .attr('fill', '#8a8373')
       .text('data to dashboards to decisions');
 
-    // ── Onboarding edges (flowing curve through all nodes, into hub) ──
-    // Build a single smooth path through all onboarding points + hub
-    const onboardPath = ONBOARD.map(n => POS[n.id]).concat([hub]);
 
-    // Draw segment edges with flow animation
-    for (let i = 0; i < onboardPath.length - 1; i++) {
-      const s = onboardPath[i];
-      const t = onboardPath[i + 1];
-      const isLast = i === onboardPath.length - 2;
+    // ── Onboarding Arc (01 -> 07) ──
+    for (let i = 0; i < ONBOARD.length - 1; i++) {
+      const s = POS[ONBOARD[i].id];
+      const t = POS[ONBOARD[i + 1].id];
+      const offset = 60 / R; // Avoid drawing inside the node circle (node radius ~48)
+      const sAngle = s.angle + offset;
+      const tAngle = t.angle - offset;
 
-      // Compute gentle bezier
-      const dx = t.x - s.x;
-      const dy = t.y - s.y;
-      const midX = s.x + dx * 0.5;
-      const ctrl1X = s.x + dx * 0.5;
-      const ctrl1Y = s.y;
-      const ctrl2X = s.x + dx * 0.5;
-      const ctrl2Y = t.y;
+      const sx = hub.x + R * Math.cos(sAngle);
+      const sy = hub.y + R * Math.sin(sAngle);
+      const tx = hub.x + R * Math.cos(tAngle);
+      const ty = hub.y + R * Math.sin(tAngle);
 
-      // Shortening for arrowhead near last segment (into hub)
-      let sx = s.x, sy = s.y, tx = t.x, ty = t.y;
-      if (i > 0) {
-        const angle = Math.atan2(s.y - (onboardPath[i-1].y), s.x - (onboardPath[i-1].x));
-        sx = s.x + Math.cos(angle) * 32;
-        sy = s.y + Math.sin(angle) * 32;
-      } else {
-        sx = s.x + 32;
-      }
-      if (isLast) {
-        // Shorten into hub circle
-        const hubR = 115;
-        const angle = Math.atan2(ty - sy, tx - sx);
-        tx = t.x - Math.cos(angle) * hubR;
-        ty = t.y - Math.sin(angle) * hubR;
-      } else {
-        const angle = Math.atan2(t.y - s.y, t.x - s.x);
-        tx = t.x - Math.cos(angle) * 32;
-        ty = t.y - Math.sin(angle) * 32;
-      }
+      const path = `M${sx},${sy} A${R},${R} 0 0,1 ${tx},${ty}`;
 
-      const path = `M${sx},${sy} C${ctrl1X},${ctrl1Y} ${ctrl2X},${ctrl2Y} ${tx},${ty}`;
-
-      // Base line
-      edgeLayer.append('path')
-        .attr('d', path)
-        .attr('fill', 'none')
-        .attr('stroke', '#b8593e')
-        .attr('stroke-opacity', 0.15)
-        .attr('stroke-width', 1);
-
-      // Flow animation line
-      edgeLayer.append('path')
-        .attr('d', path)
-        .attr('class', 'flow')
-        .attr('fill', 'none')
-        .attr('stroke', '#b8593e')
-        .attr('stroke-opacity', 0.55)
-        .attr('stroke-width', 1.2)
-        .attr('marker-end', isLast ? 'url(#arr-onboard)' : null);
+      edgeLayer.append('path').attr('d', path).attr('fill', 'none').attr('stroke', '#b8593e').attr('stroke-opacity', 0.2).attr('stroke-width', 2);
+      edgeLayer.append('path').attr('d', path).attr('class', 'flow').attr('fill', 'none').attr('stroke', '#b8593e').attr('stroke-opacity', 0.7).attr('stroke-width', 2).attr('marker-end', 'url(#arr-onboard)');
     }
 
-    // Query-resolution loop: arc from 'queries' back to 'dvs-import' showing iteration
+    // ── Edge 07 -> Hub ──
+    const lastOb = POS[ONBOARD[ONBOARD.length - 1].id];
+    const s07x = lastOb.x - 55 * Math.cos(lastOb.angle);
+    const s07y = lastOb.y - 55 * Math.sin(lastOb.angle);
+    const tHubx = hub.x + hubRadius * Math.cos(lastOb.angle);
+    const tHuby = hub.y + hubRadius * Math.sin(lastOb.angle);
+    const path07ToHub = `M${s07x},${s07y} L${tHubx},${tHuby}`;
+
+    edgeLayer.append('path').attr('d', path07ToHub).attr('fill', 'none').attr('stroke', '#b8593e').attr('stroke-opacity', 0.2).attr('stroke-width', 2);
+    edgeLayer.append('path').attr('d', path07ToHub).attr('class', 'flow').attr('fill', 'none').attr('stroke', '#b8593e').attr('stroke-opacity', 0.7).attr('stroke-width', 2).attr('marker-end', 'url(#arr-onboard)');
+
+    // ── Edge Hub -> 08 ──
+    const firstAn = POS[ANALYTICS[0].id];
+    const sHubAnX = hub.x + hubRadius * Math.cos(firstAn.angle);
+    const sHubAnY = hub.y + hubRadius * Math.sin(firstAn.angle);
+    const t08x = firstAn.x - 55 * Math.cos(firstAn.angle);
+    const t08y = firstAn.y - 55 * Math.sin(firstAn.angle);
+    const pathHubTo08 = `M${sHubAnX},${sHubAnY} L${t08x},${t08y}`;
+
+    edgeLayer.append('path').attr('d', pathHubTo08).attr('fill', 'none').attr('stroke', '#3a5a78').attr('stroke-opacity', 0.2).attr('stroke-width', 2);
+    edgeLayer.append('path').attr('d', pathHubTo08).attr('class', 'flow').attr('fill', 'none').attr('stroke', '#3a5a78').attr('stroke-opacity', 0.7).attr('stroke-width', 2).attr('marker-end', 'url(#arr-analytics)');
+
+
+    // ── Analytics Arc (08 -> 11) ──
+    for (let i = 0; i < ANALYTICS.length - 1; i++) {
+      const s = POS[ANALYTICS[i].id];
+      const t = POS[ANALYTICS[i + 1].id];
+      const offset = 60 / R;
+      const sAngle = s.angle + offset;
+      const tAngle = t.angle - offset;
+
+      const sx = hub.x + R * Math.cos(sAngle);
+      const sy = hub.y + R * Math.sin(sAngle);
+      const tx = hub.x + R * Math.cos(tAngle);
+      const ty = hub.y + R * Math.sin(tAngle);
+
+      const path = `M${sx},${sy} A${R},${R} 0 0,1 ${tx},${ty}`;
+
+      edgeLayer.append('path').attr('d', path).attr('fill', 'none').attr('stroke', '#3a5a78').attr('stroke-opacity', 0.2).attr('stroke-width', 2);
+      edgeLayer.append('path').attr('d', path).attr('class', 'flow').attr('fill', 'none').attr('stroke', '#3a5a78').attr('stroke-opacity', 0.7).attr('stroke-width', 2).attr('marker-end', 'url(#arr-analytics)');
+    }
+
+    // ── Loop Edge (Queries -> DVS) ──
     const qPos = POS['queries'];
     const dvsPos = POS['dvs-import'];
-    const loopCtrlY = Math.max(qPos.y, dvsPos.y) + 70;
-    const loopPath = `M${qPos.x - 20},${qPos.y + 30} Q${(qPos.x + dvsPos.x) / 2},${loopCtrlY} ${dvsPos.x + 20},${dvsPos.y + 30}`;
+    const midAngle = (qPos.angle + dvsPos.angle) / 2;
+    const ctrlDist = R + 140; 
+    const ctrlX = hub.x + ctrlDist * Math.cos(midAngle);
+    const ctrlY = hub.y + ctrlDist * Math.sin(midAngle);
+
+    const qOutX = qPos.x + 50 * Math.cos(qPos.angle);
+    const qOutY = qPos.y + 50 * Math.sin(qPos.angle);
+    const dvsInX = dvsPos.x + 50 * Math.cos(dvsPos.angle);
+    const dvsInY = dvsPos.y + 50 * Math.sin(dvsPos.angle);
+
+    const loopPath = `M${qOutX},${qOutY} Q${ctrlX},${ctrlY} ${dvsInX},${dvsInY}`;
 
     edgeLayer.append('path')
       .attr('d', loopPath)
       .attr('class', 'flow-reverse')
       .attr('fill', 'none')
       .attr('stroke', '#b8593e')
-      .attr('stroke-opacity', 0.35)
-      .attr('stroke-width', 1)
-      .attr('stroke-dasharray', '3 5')
+      .attr('stroke-opacity', 0.4)
+      .attr('stroke-width', 1.5)
+      .attr('stroke-dasharray', '4 6')
       .attr('marker-end', 'url(#arr-loop)');
 
-    // Loop label
     labelLayer.append('text')
       .attr('class', 'edge-label')
-      .attr('x', (qPos.x + dvsPos.x) / 2)
-      .attr('y', loopCtrlY + 14)
-      .attr('font-style', 'italic')
+      .attr('x', ctrlX + 10)
+      .attr('y', ctrlY + 10)
       .text('iterate until clean');
 
-    // ── Analytics edges (from hub outward, chaining through) ──
-    const analyticsPath = [hub].concat(ANALYTICS.map(n => POS[n.id]));
-
-    for (let i = 0; i < analyticsPath.length - 1; i++) {
-      const s = analyticsPath[i];
-      const t = analyticsPath[i + 1];
-      const isFirst = i === 0;
-
-      const dx = t.x - s.x;
-      const dy = t.y - s.y;
-      const ctrl1X = s.x + dx * 0.5;
-      const ctrl1Y = s.y;
-      const ctrl2X = s.x + dx * 0.5;
-      const ctrl2Y = t.y;
-
-      let sx = s.x, sy = s.y, tx = t.x, ty = t.y;
-      if (isFirst) {
-        const hubR = 115;
-        const angle = Math.atan2(t.y - s.y, t.x - s.x);
-        sx = s.x + Math.cos(angle) * hubR;
-        sy = s.y + Math.sin(angle) * hubR;
-      } else {
-        const angle = Math.atan2(t.y - s.y, t.x - s.x);
-        sx = s.x + Math.cos(angle) * 32;
-        sy = s.y + Math.sin(angle) * 32;
-      }
-      const angle = Math.atan2(t.y - s.y, t.x - s.x);
-      tx = t.x - Math.cos(angle) * 32;
-      ty = t.y - Math.sin(angle) * 32;
-
-      const path = `M${sx},${sy} C${ctrl1X},${ctrl1Y} ${ctrl2X},${ctrl2Y} ${tx},${ty}`;
-
-      edgeLayer.append('path')
-        .attr('d', path)
-        .attr('fill', 'none')
-        .attr('stroke', '#3a5a78')
-        .attr('stroke-opacity', 0.15)
-        .attr('stroke-width', 1);
-
-      edgeLayer.append('path')
-        .attr('d', path)
-        .attr('class', 'flow')
-        .attr('fill', 'none')
-        .attr('stroke', '#3a5a78')
-        .attr('stroke-opacity', 0.55)
-        .attr('stroke-width', 1.2);
-    }
 
     // ── HUB ──
-    // Outer glow rings (pulsing)
     nodeLayer.append('circle')
       .attr('cx', hub.x).attr('cy', hub.y)
-      .attr('r', 165)
+      .attr('r', 195)
       .attr('fill', '#2d4a3e')
       .attr('fill-opacity', 0.04)
       .attr('class', 'pulse');
 
     nodeLayer.append('circle')
       .attr('cx', hub.x).attr('cy', hub.y)
-      .attr('r', 140)
+      .attr('r', 160)
       .attr('fill', 'none')
       .attr('stroke', '#2d4a3e')
       .attr('stroke-opacity', 0.1)
-      .attr('stroke-width', 1)
-      .attr('stroke-dasharray', '2 6');
+      .attr('stroke-width', 1.5)
+      .attr('stroke-dasharray', '3 7');
 
-    // Main hub circle
     const hubG = nodeLayer.append('g')
       .attr('class', 'node-hit')
       .attr('transform', `translate(${hub.x}, ${hub.y})`)
       .on('click', () => selectStep(HUB));
 
-    // Selection ring
     hubG.append('circle')
-      .attr('r', 125)
+      .attr('r', 148)
       .attr('fill', 'none')
       .attr('stroke', '#c89b5a')
-      .attr('stroke-width', 1.5)
-      .attr('stroke-dasharray', '3 5')
+      .attr('stroke-width', 2)
+      .attr('stroke-dasharray', '4 6')
       .attr('opacity', activeId === 'lifesight' ? 0.9 : 0);
 
     const hubGrad = defs.append('radialGradient')
@@ -1073,74 +846,35 @@
     hubGrad.append('stop').attr('offset', '100%').attr('stop-color', '#1f3529');
 
     hubG.append('circle')
-      .attr('r', 115)
+      .attr('r', hubRadius)
       .attr('class', 'node-circle')
       .attr('fill', 'url(#hub-grad)')
-      .attr('stroke', 'rgba(200, 155, 90, 0.4)')
-      .attr('stroke-width', 1.5)
+      .attr('stroke', 'rgba(200, 155, 90, 0.5)')
+      .attr('stroke-width', 2)
       .attr('filter', 'url(#shadow)');
 
-    // Inner decorative ring
     hubG.append('circle')
-      .attr('r', 98)
+      .attr('r', 115)
       .attr('fill', 'none')
-      .attr('stroke', 'rgba(200, 155, 90, 0.2)')
-      .attr('stroke-width', 0.8);
-
-    // Hub text
-    hubG.append('text')
-      .attr('class', 'hub-sub')
-      .attr('y', -28)
-      .text('· the hub ·');
+      .attr('stroke', 'rgba(200, 155, 90, 0.25)')
+      .attr('stroke-width', 1);
 
     hubG.append('text')
       .attr('class', 'hub-title')
-      .attr('y', 5)
+      .attr('y', 10)
       .text('LifeSight');
 
-    hubG.append('text')
-      .attr('class', 'hub-sub')
-      .attr('y', 28)
-      .text('Source of Truth');
-
-    // Small ornament dots on hub
     [-1, 1].forEach(dir => {
       hubG.append('circle')
-        .attr('cx', dir * 55).attr('cy', 52)
-        .attr('r', 1.5)
+        .attr('cx', dir * 75).attr('cy', 60)
+        .attr('r', 2)
         .attr('fill', '#c89b5a')
-        .attr('fill-opacity', 0.6);
+        .attr('fill-opacity', 0.8);
     });
 
-    // ── ONBOARDING NODES ──
-    ONBOARD.forEach(n => {
-      drawStepNode(n, PHASES.onboard.hex);
-    });
-
-    // ── ANALYTICS NODES ──
-    ANALYTICS.forEach(n => {
-      drawStepNode(n, PHASES.analytics.hex);
-    });
-
-    // ── Connecting line annotations above each side ──
-    // Decorative underline beneath onboarding phase label
-    bgLayer.append('line')
-      .attr('x1', obMinX + 12)
-      .attr('x2', obMinX + 120)
-      .attr('y1', 116)
-      .attr('y2', 116)
-      .attr('stroke', '#b8593e')
-      .attr('stroke-opacity', 0.4)
-      .attr('stroke-width', 1);
-
-    bgLayer.append('line')
-      .attr('x1', anaMinX - 20)
-      .attr('x2', anaMinX + 80)
-      .attr('y1', 116)
-      .attr('y2', 116)
-      .attr('stroke', '#3a5a78')
-      .attr('stroke-opacity', 0.4)
-      .attr('stroke-width', 1);
+    // ── NODES ──
+    ONBOARD.forEach(n => drawStepNode(n, PHASES.onboard.hex));
+    ANALYTICS.forEach(n => drawStepNode(n, PHASES.analytics.hex));
   }
 
   function drawStepNode(n, color) {
@@ -1152,16 +886,14 @@
       .attr('transform', `translate(${p.x}, ${p.y})`)
       .on('click', () => selectStep(n));
 
-    // Selection ring
     g.append('circle')
-      .attr('r', 40)
+      .attr('r', 52)
       .attr('fill', 'none')
       .attr('stroke', color)
-      .attr('stroke-width', 1.2)
-      .attr('stroke-dasharray', '2 4')
+      .attr('stroke-width', 1.5)
+      .attr('stroke-dasharray', '3 5')
       .attr('opacity', isActive ? 0.9 : 0);
 
-    // Gradient
     const gradId = `grad-${n.id}`;
     if (!document.getElementById(gradId)) {
       const grad = defs.append('radialGradient')
@@ -1173,44 +905,34 @@
         .attr('stop-color', d3.color(color).darker(0.6).formatHex());
     }
 
-    // Background ring (paper color) to lift off bg
     g.append('circle')
-      .attr('r', 32)
+      .attr('r', 40)
       .attr('fill', 'var(--paper)')
       .attr('filter', 'url(#shadow)');
 
-    // Colored accent ring
     g.append('circle')
-      .attr('r', 32)
+      .attr('r', 40)
       .attr('class', 'node-circle')
       .attr('fill', 'none')
       .attr('stroke', color)
-      .attr('stroke-width', isActive ? 2.5 : 1.5)
-      .attr('stroke-opacity', isActive ? 1 : 0.75);
+      .attr('stroke-width', isActive ? 3 : 2)
+      .attr('stroke-opacity', isActive ? 1 : 0.85);
 
-    // Inner filled circle
     g.append('circle')
-      .attr('r', 25)
+      .attr('r', 32)
       .attr('fill', `url(#${gradId})`)
-      .attr('fill-opacity', 0.12);
+      .attr('fill-opacity', 0.15);
 
-    // Step number
     g.append('text')
       .attr('class', 'node-num')
-      .attr('y', -2)
+      .attr('y', 4)
       .attr('fill', color)
       .text(n.num);
 
-    // Name label (below circle)
     labelLayer.append('text')
       .attr('class', 'node-label')
-      .attr('x', p.x).attr('y', p.y + 52)
+      .attr('x', p.x).attr('y', p.y + 65)
       .text(n.name);
-
-    labelLayer.append('text')
-      .attr('class', 'node-sub')
-      .attr('x', p.x).attr('y', p.y + 66)
-      .text(n.sub);
   }
 
   // ── PANEL ─────────────────────────────────────────────────────────────
@@ -1225,20 +947,12 @@
     panelEl.style.setProperty('--panel-color', accentColor);
     accent.style.background = accentColor;
 
-    // Crumb
     document.getElementById('p-crumb').textContent = step.phase_label || phase.label;
     document.getElementById('p-crumb').style.color = accentColor;
-
-    // Title (may contain em)
     document.getElementById('p-title').innerHTML = step.title;
-
-    // Phase tag
     document.getElementById('p-phase').textContent = phase.label.toLowerCase();
-
-    // Body
     document.getElementById('p-body').innerHTML = `<p>${step.body}</p>`;
 
-    // Details
     const detailsEl = document.getElementById('p-details');
     detailsEl.innerHTML = step.details.map((d, i) =>
       `<div class="panel-detail">
@@ -1247,10 +961,8 @@
       </div>`
     ).join('');
 
-    // Output
     document.getElementById('p-output').textContent = step.output;
 
-    // Aside
     const asideEl = document.getElementById('p-aside');
     if (step.aside) {
       asideEl.innerHTML = step.aside;
@@ -1259,7 +971,6 @@
       asideEl.style.display = 'none';
     }
 
-    // Nav indicator
     const idx = ALL_STEPS.findIndex(s => s.id === step.id);
     document.getElementById('p-nav').textContent =
       step.id === 'lifesight'
@@ -1285,7 +996,6 @@
   layout();
   draw();
 
-  // Open hub by default after a beat
   setTimeout(() => selectStep(HUB), 600);
 
   // ── RESIZE ────────────────────────────────────────────────────────────
