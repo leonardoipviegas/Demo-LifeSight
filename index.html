@@ -1,893 +1,201 @@
-<!DOCTYPE html>
-<html lang="en">
-<head>
-<meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>LifeSight — Data Process Proposal</title>
-<link href="https://fonts.googleapis.com/css2?family=Fraunces:ital,opsz,wght@0,9..144,300;0,9..144,400;0,9..144,500;0,9..144,600;1,9..144,400&family=JetBrains+Mono:wght@300;400;500&family=Inter:wght@300;400;500;600&display=swap" rel="stylesheet">
-<script src="https://cdnjs.cloudflare.com/ajax/libs/d3/7.9.0/d3.min.js"></script>
-<style>
-  :root {
-    --bg: #f5f1ea;
-    --bg-deep: #ebe5d9;
-    --ink: #1a1814;
-    --ink-soft: #4a453c;
-    --ink-faint: #8a8373;
-    --rule: #d4ccbc;
-    --paper: #faf7f1;
-
-    --c-onboard: #b8593e;   /* terracotta */
-    --c-hub: #2d4a3e;        /* deep green */
-    --c-analytics: #3a5a78;  /* muted blue */
-    --c-accent: #c89b5a;     /* ochre */
-  }
-
-  * { box-sizing: border-box; margin: 0; padding: 0; }
-
-  html, body { height: 100%; }
-  body {
-    font-family: 'Fraunces', serif;
-    background: var(--bg);
-    color: var(--ink);
-    overflow: hidden;
-    position: relative;
-  }
-
-  /* Paper texture */
-  body::before {
-    content: '';
-    position: fixed; inset: 0; z-index: 0; pointer-events: none;
-    background-image:
-      radial-gradient(circle at 20% 30%, rgba(139, 115, 85, 0.05) 0%, transparent 40%),
-      radial-gradient(circle at 80% 70%, rgba(139, 115, 85, 0.04) 0%, transparent 40%);
-  }
-
-  /* Subtle grain */
-  body::after {
-    content: '';
-    position: fixed; inset: 0; z-index: 1; pointer-events: none;
-    opacity: 0.35;
-    background-image: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='200' height='200'><filter id='n'><feTurbulence baseFrequency='0.9' numOctaves='2' seed='4'/><feColorMatrix values='0 0 0 0 0.1 0 0 0 0 0.09 0 0 0 0 0.08 0 0 0 0.08 0'/></filter><rect width='200' height='200' filter='url(%23n)'/></svg>");
-  }
-
-  /* ── HEADER ─────────────────────────────────────────── */
-  header {
-    position: fixed; top: 0; left: 0; right: 0;
-    padding: 24px 36px 14px;
-    background: linear-gradient(to bottom, var(--bg) 70%, transparent);
-    z-index: 30;
-    display: flex; align-items: flex-end; justify-content: space-between;
-    pointer-events: none;
-  }
-  .title-block {
-    display: flex; align-items: baseline; gap: 14px;
-    pointer-events: auto;
-  }
-  .mark {
-    font-family: 'Fraunces', serif;
-    font-weight: 500;
-    font-size: 1.4rem;
-    color: var(--ink);
-    letter-spacing: -0.5px;
-    font-style: italic;
-  }
-  .subtitle {
-    font-family: 'JetBrains Mono', monospace;
-    font-size: 0.75rem;
-    font-weight: 500;
-    color: var(--ink-faint);
-    letter-spacing: 2px;
-    text-transform: uppercase;
-  }
-
-  /* ── CANVAS ─────────────────────────────────────────── */
-  #canvas { position: absolute; inset: 0; z-index: 2; cursor: grab; }
-  #canvas:active { cursor: grabbing; }
-  svg { width: 100%; height: 100%; display: block; }
-
-  /* ── SVG TEXT STYLES ────────────────────────────────── */
-  .node-label {
-    font-family: 'Fraunces', serif;
-    font-size: 16px;
-    font-weight: 500;
-    fill: var(--ink);
-    text-anchor: middle;
-    pointer-events: none;
-    letter-spacing: -0.2px;
-  }
-  .node-num {
-    font-family: 'JetBrains Mono', monospace;
-    font-size: 12px;
-    font-weight: 500;
-    fill: var(--ink-faint);
-    text-anchor: middle;
-    pointer-events: none;
-    letter-spacing: 0.5px;
-  }
-  .edge-label {
-    font-family: 'Fraunces', serif;
-    font-style: italic;
-    font-size: 13px;
-    font-weight: 400;
-    fill: var(--ink-faint);
-    text-anchor: middle;
-    pointer-events: none;
-  }
-  .hub-title {
-    font-family: 'Fraunces', serif;
-    font-size: 42px;
-    font-weight: 500;
-    font-style: italic;
-    fill: white;
-    text-anchor: middle;
-    pointer-events: none;
-    letter-spacing: -0.5px;
-  }
-
-  /* Animated flow on edges */
-  .flow {
-    stroke-dasharray: 4 10;
-    animation: dash 2.5s linear infinite;
-  }
-  @keyframes dash { to { stroke-dashoffset: -28; } }
-
-  /* Pulse for hub */
-  .pulse {
-    animation: pulse 3.5s ease-in-out infinite;
-    transform-origin: center;
-    transform-box: fill-box;
-  }
-  @keyframes pulse {
-    0%, 100% { transform: scale(1); opacity: 0.15; }
-    50% { transform: scale(1.06); opacity: 0.05; }
-  }
-
-  /* Hover states on nodes */
-  .node-hit { cursor: grab; }
-  .node-hit:active { cursor: grabbing; }
-  .node-hit:hover .node-circle {
-    filter: brightness(1.05);
-  }
-
-  /* ── PANEL ──────────────────────────────────────────── */
-  #panel {
-    position: fixed; top: 0; right: 0;
-    width: 420px; height: 100vh;
-    background: var(--paper);
-    border-left: 1px solid var(--rule);
-    z-index: 40;
-    display: flex; flex-direction: column;
-    transition: transform 0.5s cubic-bezier(0.16, 1, 0.3, 1);
-    box-shadow: -20px 0 40px rgba(26, 24, 20, 0.06);
-  }
-  #panel.hidden { transform: translateX(100%); }
-
-  .panel-accent {
-    position: absolute; top: 0; left: 0; right: 0;
-    height: 4px;
-    background: var(--panel-color, var(--c-onboard));
-  }
-
-  .panel-inner {
-    padding: 50px 36px 20px;
-    flex: 1;
-    overflow-y: auto;
-    display: flex; flex-direction: column;
-    gap: 24px;
-  }
-
-  .panel-header {
-    display: flex; flex-direction: column; gap: 8px;
-  }
-  .panel-crumb {
-    font-family: 'JetBrains Mono', monospace;
-    font-size: 0.68rem;
-    letter-spacing: 2px;
-    text-transform: uppercase;
-    color: var(--panel-color, var(--c-onboard));
-    font-weight: 500;
-  }
-  .panel-title {
-    font-family: 'Fraunces', serif;
-    font-size: 2rem;
-    font-weight: 500;
-    line-height: 1.1;
-    color: var(--ink);
-    letter-spacing: -1px;
-  }
-
-  .rule-dotted {
-    height: 1px;
-    background-image: linear-gradient(to right, var(--rule) 50%, transparent 50%);
-    background-size: 6px 1px;
-  }
-
-  .section-label {
-    font-family: 'JetBrains Mono', monospace;
-    font-size: 0.65rem;
-    font-weight: 500;
-    letter-spacing: 2px;
-    text-transform: uppercase;
-    color: var(--ink-faint);
-    margin-bottom: 12px;
-  }
-
-  .panel-body {
-    font-family: 'Fraunces', serif;
-    font-size: 1.05rem;
-    line-height: 1.55;
-    color: var(--ink-soft);
-  }
-  .panel-body p + p { margin-top: 12px; }
-
-  .panel-detail {
-    display: flex; gap: 14px; margin-bottom: 14px;
-  }
-  .detail-num {
-    font-family: 'Fraunces', serif;
-    font-style: italic;
-    font-size: 1.1rem;
-    color: var(--panel-color, var(--c-onboard));
-    line-height: 1.4;
-    flex-shrink: 0;
-    min-width: 18px;
-  }
-  .detail-text {
-    font-family: 'Fraunces', serif;
-    font-size: 0.95rem;
-    line-height: 1.55;
-    color: var(--ink-soft);
-  }
-
-  .panel-output {
-    background: var(--bg-deep);
-    padding: 16px 20px;
-    border-left: 3px solid var(--panel-color, var(--c-onboard));
-    border-radius: 2px;
-  }
-  .output-label {
-    font-family: 'JetBrains Mono', monospace;
-    font-size: 0.6rem;
-    font-weight: 500;
-    letter-spacing: 2px;
-    text-transform: uppercase;
-    color: var(--ink-faint);
-    margin-bottom: 8px;
-  }
-  .output-val {
-    font-family: 'Fraunces', serif;
-    font-size: 1rem;
-    font-style: italic;
-    color: var(--ink);
-  }
-
-  .panel-aside {
-    font-family: 'Fraunces', serif;
-    font-style: italic;
-    font-size: 0.9rem;
-    color: var(--ink-faint);
-    padding: 12px 16px;
-    background: rgba(200, 155, 90, 0.08);
-    border-radius: 2px;
-    line-height: 1.5;
-  }
-  .panel-aside strong { font-style: normal; font-weight: 500; color: var(--c-accent); }
-
-  .panel-foot {
-    padding: 20px 36px;
-    border-top: 1px solid var(--rule);
-    display: flex; justify-content: space-between; align-items: center;
-  }
-  .foot-nav {
-    font-family: 'JetBrains Mono', monospace;
-    font-size: 0.65rem;
-    color: var(--ink-faint);
-    letter-spacing: 1px;
-  }
-  .panel-close {
-    padding: 10px 20px;
-    background: transparent;
-    border: 1px solid var(--rule);
-    color: var(--ink-soft);
-    font-family: 'JetBrains Mono', monospace;
-    font-size: 0.7rem;
-    letter-spacing: 1.5px;
-    text-transform: uppercase;
-    cursor: pointer;
-    transition: all 0.2s;
-    border-radius: 2px;
-  }
-  .panel-close:hover {
-    background: var(--ink);
-    color: var(--paper);
-    border-color: var(--ink);
-  }
-
-  .panel-inner::-webkit-scrollbar { width: 6px; }
-  .panel-inner::-webkit-scrollbar-track { background: transparent; }
-  .panel-inner::-webkit-scrollbar-thumb { background: var(--rule); border-radius: 3px; }
-</style>
-</head>
-<body>
-
-<header>
-  <div class="title-block">
-    <div style="display: flex; flex-direction: column; gap: 4px;">
-      <span class="subtitle">WTW · LifeSight</span>
-      <span class="mark">Data Process Proposal Demo</span>
-    </div>
-  </div>
-</header>
-
-<div id="canvas"></div>
-
-<div id="panel" class="hidden">
-  <div class="panel-accent"></div>
-  <div class="panel-inner">
-    <div class="panel-header">
-      <span class="panel-crumb" id="p-crumb"></span>
-      <h2 class="panel-title" id="p-title"></h2>
-    </div>
-    <div class="rule-dotted"></div>
-
-    <div>
-      <div class="section-label">What happens here</div>
-      <div class="panel-body" id="p-body"></div>
-    </div>
-
-    <div>
-      <div class="section-label" id="p-details-label">Working detail</div>
-      <div id="p-details"></div>
-    </div>
-
-    <div class="panel-output" id="p-output-container">
-      <div class="output-label">Hand-off</div>
-      <div class="output-val" id="p-output"></div>
-    </div>
-
-    <div class="panel-aside" id="p-aside" style="display: none;"></div>
-  </div>
-  <div class="panel-foot">
-    <span class="foot-nav" id="p-nav">step · of ·</span>
-    <button class="panel-close" id="p-close">Close</button>
-  </div>
-</div>
-
-<script>
-  // ── MODEL ─────────────────────────────────────────────────────────────
-  const PHASES = {
-    onboard:   { label: 'Onboarding & Updates', hex: '#b8593e' },
-    hub:       { label: 'LifeSight',            hex: '#2d4a3e' },
-    analytics: { label: 'Analytics',            hex: '#3a5a78' },
-  };
-
-  const ONBOARD = [
+{
+  "$schema": "https://vega.github.io/schema/vega-lite/v5.json",
+  "data": {
+    "name": "dataset"
+  },
+  "transform": [
     {
-      id: 'template-std', num: '01A', phase: 'onboard', name: 'Standard Template',
-      title: 'A shared starting line', phase_label: 'Step 1A · Intake',
-      body: 'The client fills in their member and scheme data using our LifeSight template — a structure we\'ve already tuned for everything downstream. It\'s the fastest route in.',
-      details: [
-        'Pre-formatted columns, field definitions, and validation hints baked in',
-        'Reduces back-and-forth — clients know exactly what we need',
-        'Versioned so we can track template changes across onboardings'
-      ],
-      output: 'A populated standard template'
+      "calculate": "'Dec-' + slice(toString(datum['Report Year']), -2)",
+      "as": "Formatted Year"
     },
     {
-      id: 'template-custom', num: '01B', phase: 'onboard', name: 'Custom Format',
-      title: 'Flexible Mapping', phase_label: 'Step 1B · Intake',
-      body: 'If a client pushes back on the template, we can take their format instead and do the mapping on our side.',
-      details: [
-        'Accommodates native client/admin exports',
-        'Mapping happens internally inside DVS instead of by the client'
+      "fold": [
+        "Baseline Bar Chart %",
+        "Country Bar Chart %",
+        "Client Bar Chart %"
       ],
-      output: 'A raw client data file'
+      "as": [
+        "Scope",
+        "Percentage"
+      ]
     },
     {
-      id: 'datalink', num: '02', phase: 'onboard', name: 'DataLink',
-      title: 'Secure Transfer', phase_label: 'Step 2 · Transfer',
-      body: 'The client sends their file through DataLink, keeping the whole exchange inside a protected environment. (Alternatives may apply.)',
-      details: [
-        'Encrypted in transit',
-        'No file ever arrives by email or unmanaged share'
-      ],
-      output: 'A received, logged client submission'
+      "filter": "datum['Percentage'] != null && datum['Percentage'] > 0"
     },
     {
-      id: 'tct', num: '03', phase: 'onboard', name: 'TCT Storage',
-      title: 'TCT Folder', phase_label: 'Step 3 · Storage',
-      body: 'Every client gets a dedicated folder on TCT. We store the original submission here untouched.',
-      details: [
-        'Raw file preserved exactly as received',
-        'Becomes the audit anchor for everything that follows'
-      ],
-      output: 'A safely stored, untouched raw file'
+      "joinaggregate": [
+        {
+          "op": "max",
+          "field": "Report Year",
+          "as": "MaxYear"
+        }
+      ]
     },
     {
-      id: 'dvs-import', num: '04', phase: 'onboard', name: 'DVS Import',
-      title: 'Into the validation engine', phase_label: 'Step 4 · Import',
-      body: 'The raw file is pulled into DVS (Data Validation System) - configured specifically for LifeSight. We map the client\'s columns to the fields LifeSight expects.',
-      aside: '<strong>One-time setup:</strong> the LifeSight-ready DVS configuration gets built once and reused across every client onboarding.',
-      details: [
-        'Field-level mapping to LifeSight\'s input schema',
-        'Handles both template submissions and client-native formats',
-        'Readies the data for rule-based validation'
-      ],
-      output: 'A DVS-loaded, mapped dataset'
+      "calculate": "datum.Scope == 'Baseline Bar Chart %' ? 'Eurozone ' + datum['Formatted Year'] : (datum.Scope == 'Country Bar Chart %' ? datum['Selected Country Name'] + ' ' + datum['Formatted Year'] : datum['Selected Client Name'] + ' ' + datum['Formatted Year'])",
+      "as": "LegendLabel"
     },
     {
-      id: 'checks', num: '05', phase: 'onboard', name: 'Data Checks',
-      title: 'Checking for Consistency', phase_label: 'Step 5 · Validate',
-      body: 'A library of reasonableness and quality rules runs across every record.',
-      details: [
-        'Ranges, mandatory fields, referential integrity',
-        'Cross-field logic (e.g. joining dates vs birth dates)',
-        'Rules tailored to LifeSight\'s scheme requirements',
-        'Failures tagged with descriptive error codes'
-      ],
-      output: 'Records split into clean & flagged'
-    },
-    {
-      id: 'queries', num: '06', phase: 'onboard', name: 'Queries File',
-      title: 'Data Queries', phase_label: 'Step 6 · Resolve',
-      body: 'We extract a queries file from DVS and we send it to the client. They respond with corrections or confirmations, until the data is fully aligned.',
-      details: [
-        'Client returns a resolution file or informs us what the changes should be; and we apply the corrections in DVS'
-      ],
-      output: 'A validated, client-confirmed dataset'
-    },
-    {
-      id: 'lifesight-extract', num: '07', phase: 'onboard', name: 'DVS Extract',
-      title: 'Extract ready to import into LifeSight', phase_label: 'Step 7 · Export',
-      body: 'Once the data is clean, DVS produces a LifeSight-ready report — formatted precisely to what LifeSight needs at import.',
-      details: [
-        'Data Export aligned to LifeSight\'s needs'
-      ],
-      output: 'LifeSight-ready import file'
+      "calculate": "(datum.Scope == 'Baseline Bar Chart %' ? 0 : (datum.Scope == 'Country Bar Chart %' ? 2 : 4)) + (datum['Report Year'] == datum.MaxYear ? 1 : 2)",
+      "as": "LegendOrder"
     }
-  ];
-
-  const HUB = {
-    id: 'lifesight', phase: 'hub', name: 'LifeSight',
-    title: 'The Core Program', phase_label: 'Central · Platform',
-    body: 'Lifesight - the core program.',
-    details: [],
-    output: ''
-  };
-
-  const ANALYTICS = [
-    {
-      id: 'extract', num: '08', phase: 'analytics', name: 'Data Extract',
-      title: 'Pulling the latest view', phase_label: 'Step 8 · Extract',
-      body: 'Once needed (or as scheduled), we create extracts from the current LifeSight dataset and drop it into a dedicated TCT folder.',
-      details: [
-        'If we automate this process, the analytics will stay fresh automatically',
-        'Shape-transformed into the schema Power BI expects',
-        'Stored in TCT for traceability and reproducibility'
-      ],
-      output: 'Reporting-ready extract in TCT'
-    },
-    {
-      id: 'powerbi', num: '09', phase: 'analytics', name: 'Power BI',
-      title: 'PowerBI integration', phase_label: 'Step 9 · Report',
-      body: 'Power BI is pointed at the TCT folder and refreshes automatically.',
-      details: [
-        'Stakeholders get near real-time visibility',
-        'Folder-based ingestion makes the pipeline self-healing'
-      ],
-      output: 'Live, current dashboards'
-    },
-    {
-      id: 'dashboard', num: '10', phase: 'analytics', name: 'Dashboards',
-      title: 'The Dashboards', phase_label: 'Step 10 · Surface',
-      body: 'We design the dashboards around what the team and the client actually want to see.',
-      details: [],
-      output: 'Curated, decision-ready views'
-    },
-    {
-      id: 'analysis', num: '11', phase: 'analytics', name: 'Analysis',
-      title: 'Where the value lands', phase_label: 'Step 11 · Insight',
-      body: 'We read the dashboards, interpret the signals, and turn the data into decisions.',
-      details: [
-        'Trend analysis across schemes and cohorts',
-        'Insights inform both WTW strategy and client conversations'
-      ],
-      output: 'Decisions backed by trusted data'
-    }
-  ];
-
-  const ALL_STEPS = [...ONBOARD, HUB, ...ANALYTICS];
-
-  // Define links between nodes
-  const LINKS = [
-    { id: 'l1', s: 'template-std', t: 'datalink', type: 'onboard' },
-    { id: 'l2', s: 'template-custom', t: 'datalink', type: 'onboard' },
-    { id: 'l3', s: 'datalink', t: 'tct', type: 'onboard' },
-    { id: 'l4', s: 'tct', t: 'dvs-import', type: 'onboard' },
-    { id: 'l5', s: 'dvs-import', t: 'checks', type: 'onboard' },
-    { id: 'l6', s: 'checks', t: 'queries', type: 'onboard' },
-    { id: 'l7', s: 'queries', t: 'lifesight-extract', type: 'onboard' },
-    { id: 'l8', s: 'lifesight-extract', t: 'lifesight', type: 'onboard' },
-    { id: 'l9', s: 'lifesight', t: 'extract', type: 'analytics' },
-    { id: 'l10', s: 'extract', t: 'powerbi', type: 'analytics' },
-    { id: 'l11', s: 'powerbi', t: 'dashboard', type: 'analytics' },
-    { id: 'l12', s: 'dashboard', t: 'analysis', type: 'analytics' },
-    { id: 'l13', s: 'queries', t: 'dvs-import', type: 'onboard', reverse: true } // Straight line bypass loop
-  ];
-
-  // ── SVG SETUP ─────────────────────────────────────────────────────────
-  let W = window.innerWidth;
-  let H = window.innerHeight;
-
-  const svg = d3.select('#canvas').append('svg').attr('viewBox', [0, 0, W, H]);
-  const mainGroup = svg.append('g');
-
-  const zoom = d3.zoom()
-    .scaleExtent([0.3, 3])
-    .on('zoom', (event) => {
-      mainGroup.attr('transform', event.transform);
-    });
-  svg.call(zoom);
-
-  const defs = svg.append('defs');
-
-  // Drop shadow
-  const shadow = defs.append('filter')
-    .attr('id', 'shadow')
-    .attr('x', '-50%').attr('y', '-50%')
-    .attr('width', '200%').attr('height', '200%');
-  shadow.append('feDropShadow')
-    .attr('dx', 0).attr('dy', 5)
-    .attr('stdDeviation', 6)
-    .attr('flood-color', 'rgba(26, 24, 20, 0.15)');
-
-  // Arrowheads
-  ['onboard', 'analytics', 'loop'].forEach(phaseKey => {
-    const color = phaseKey === 'onboard' ? '#b8593e'
-                : phaseKey === 'analytics' ? '#3a5a78'
-                : '#b8593e';
-    defs.append('marker')
-      .attr('id', `arr-${phaseKey}`)
-      .attr('viewBox', '0 -4 8 8')
-      .attr('refX', 8).attr('refY', 0)
-      .attr('markerWidth', 7).attr('markerHeight', 7)
-      .attr('orient', 'auto')
-      .append('path')
-      .attr('d', 'M0,-4L8,0L0,4Z')
-      .attr('fill', color)
-      .attr('fill-opacity', 0.85);
-  });
-
-  // Dynamic Gradients for Nodes
-  ALL_STEPS.forEach(n => {
-     if(n.id === 'lifesight') return;
-     const color = n.phase === 'onboard' ? PHASES.onboard.hex : PHASES.analytics.hex;
-     const grad = defs.append('radialGradient')
-        .attr('id', `grad-${n.id}`)
-        .attr('cx', '40%').attr('cy', '35%').attr('r', '65%');
-     grad.append('stop').attr('offset', '0%').attr('stop-color', d3.color(color).brighter(0.8).formatHex());
-     grad.append('stop').attr('offset', '100%').attr('stop-color', d3.color(color).brighter(0.1).formatHex());
-  });
-
-  // Hub Gradient
-  const hubGrad = defs.append('radialGradient')
-    .attr('id', 'hub-grad')
-    .attr('cx', '40%').attr('cy', '35%').attr('r', '70%');
-  hubGrad.append('stop').attr('offset', '0%').attr('stop-color', '#3e6454');
-  hubGrad.append('stop').attr('offset', '100%').attr('stop-color', '#1f3529');
-
-  // Layers
-  const edgeLayer = mainGroup.append('g').attr('class', 'edge-layer');
-  const loopLayer = mainGroup.append('g').attr('class', 'loop-layer');
-  const nodeLayer = mainGroup.append('g').attr('class', 'node-layer');
-
-  let activeId = null;
-  let R = 0; 
-
-  // ── INITIAL LAYOUT MATH ───────────────────────────────────────────────
-  function initLayout() {
-    const hubX = W / 2;
-    const hubY = H / 2 + 20; 
-    R = Math.min(W, H) * 0.38; 
-
-    // Spread adjusted to ensure wide separation between Node 2 (0.92 PI) and Node 11 (0.72 PI)
-    const angles = {
-      'datalink': Math.PI * 0.92,
-      'tct': Math.PI * 1.10,
-      'dvs-import': Math.PI * 1.28,
-      'checks': Math.PI * 1.50,    // Top center
-      'queries': Math.PI * 1.72,
-      'lifesight-extract': Math.PI * 1.90,
-      'extract': Math.PI * 0.10,
-      'powerbi': Math.PI * 0.28,
-      'dashboard': Math.PI * 0.50,
-      'analysis': Math.PI * 0.72
-    };
-
-    ALL_STEPS.forEach(n => {
-       if (n.id === 'lifesight') {
-          n.baseX = hubX;
-          n.baseY = hubY;
-       } else if (n.id === 'template-std') {
-          const dlAngle = angles['datalink'];
-          n.baseX = hubX + (R + 150) * Math.cos(dlAngle) - 30;
-          n.baseY = hubY + (R + 150) * Math.sin(dlAngle) - 70;
-       } else if (n.id === 'template-custom') {
-          const dlAngle = angles['datalink'];
-          n.baseX = hubX + (R + 150) * Math.cos(dlAngle) - 30;
-          n.baseY = hubY + (R + 150) * Math.sin(dlAngle) + 70;
-       } else {
-          n.baseX = hubX + R * Math.cos(angles[n.id]);
-          n.baseY = hubY + R * Math.sin(angles[n.id]);
-       }
-       
-       n.x = n.baseX;
-       n.y = n.baseY;
-       n.dragging = false;
-    });
-  }
-
-  // ── DRAWING LOGIC ─────────────────────────────────────────────────────
-  function draw() {
-    edgeLayer.selectAll('*').remove();
-    loopLayer.selectAll('*').remove();
-    nodeLayer.selectAll('*').remove();
-
-    // -- Normal Links --
-    const regularLinks = LINKS.filter(d => !d.reverse);
-    edgeLayer.selectAll('.link-path').data(regularLinks, d => d.id)
-        .enter().append('path')
-        .attr('class', 'link-path')
-        .attr('fill', 'none')
-        .attr('stroke', d => d.type === 'onboard' ? '#b8593e' : '#3a5a78')
-        .attr('stroke-opacity', 0.2)
-        .attr('stroke-width', 2);
-
-    edgeLayer.selectAll('.link-flow').data(regularLinks, d => d.id)
-        .enter().append('path')
-        .attr('class', 'link-flow flow')
-        .attr('fill', 'none')
-        .attr('stroke', d => d.type === 'onboard' ? '#b8593e' : '#3a5a78')
-        .attr('stroke-opacity', 0.8)
-        .attr('stroke-width', 2)
-        .attr('marker-end', d => d.type === 'onboard' ? 'url(#arr-onboard)' : 'url(#arr-analytics)');
-
-    // -- Clean Straight Bypass Loop (6 to 4) --
-    const loopLink = LINKS.filter(d => d.reverse);
-    loopLayer.selectAll('.link-path').data(loopLink, d => d.id)
-        .enter().append('path')
-        .attr('class', 'link-path')
-        .attr('fill', 'none')
-        .attr('stroke', '#b8593e')
-        .attr('stroke-opacity', 0.2)
-        .attr('stroke-width', 2);
-
-    loopLayer.selectAll('.link-flow').data(loopLink, d => d.id)
-        .enter().append('path')
-        .attr('class', 'link-flow flow')
-        .attr('fill', 'none')
-        .attr('stroke', '#b8593e')
-        .attr('stroke-opacity', 0.8)
-        .attr('stroke-width', 2)
-        .attr('stroke-dasharray', '4 8')
-        .attr('marker-end', 'url(#arr-loop)');
-
-    // -- Nodes --
-    const nodeGroups = nodeLayer.selectAll('.node-group').data(ALL_STEPS, d => d.id);
-    const nodeEnter = nodeGroups.enter().append('g')
-        .attr('class', 'node-group node-hit')
-        .call(d3.drag()
-            .on("start", (event, d) => { d.dragging = true; })
-            .on("drag", (event, d) => { d.x = event.x; d.y = event.y; })
-            .on("end", (event, d) => { d.dragging = false; }))
-        .on('click', (event, d) => selectStep(d));
-
-    // Outer Selection Ring
-    nodeEnter.append('circle')
-        .attr('class', 'ring-select')
-        .attr('r', d => d.id === 'lifesight' ? 148 : 55)
-        .attr('fill', 'none')
-        .attr('stroke', d => d.id === 'lifesight' ? '#c89b5a' : (d.phase === 'onboard' ? PHASES.onboard.hex : PHASES.analytics.hex))
-        .attr('stroke-width', 2.5)
-        .attr('stroke-dasharray', '4 6')
-        .attr('opacity', 0);
-
-    // Background Shadow
-    nodeEnter.append('circle')
-        .attr('r', d => d.id === 'lifesight' ? 135 : 44)
-        .attr('fill', d => d.id === 'lifesight' ? 'none' : 'var(--paper)')
-        .attr('filter', 'url(#shadow)');
-
-    // Main Circle
-    nodeEnter.append('circle')
-        .attr('class', 'node-circle ring-main')
-        .attr('r', d => d.id === 'lifesight' ? 135 : 44)
-        .attr('fill', d => d.id === 'lifesight' ? 'url(#hub-grad)' : 'none')
-        .attr('stroke', d => d.id === 'lifesight' ? 'rgba(200, 155, 90, 0.5)' : (d.phase === 'onboard' ? PHASES.onboard.hex : PHASES.analytics.hex))
-        .attr('stroke-width', 2);
-
-    // Inner Color Gradient (Normal Nodes)
-    nodeEnter.filter(d => d.id !== 'lifesight').append('circle')
-        .attr('r', 36)
-        .attr('fill', d => `url(#grad-${d.id})`)
-        .attr('fill-opacity', 0.25);
-
-    // Number
-    nodeEnter.filter(d => d.id !== 'lifesight').append('text')
-        .attr('class', 'node-num')
-        .attr('y', 4)
-        .attr('fill', d => d.phase === 'onboard' ? PHASES.onboard.hex : PHASES.analytics.hex)
-        .text(d => d.num);
-
-    // Short Title
-    nodeEnter.filter(d => d.id !== 'lifesight').append('text')
-        .attr('class', 'node-label')
-        .attr('y', 70)
-        .text(d => d.name);
-
-    // ── HUB DECORATION ──
-    const hubEnter = nodeEnter.filter(d => d.id === 'lifesight');
-    hubEnter.insert('circle', ':first-child').attr('r', 195).attr('fill', '#2d4a3e').attr('fill-opacity', 0.04).attr('class', 'pulse');
-    hubEnter.insert('circle', ':first-child').attr('r', 160).attr('fill', 'none').attr('stroke', '#2d4a3e').attr('stroke-opacity', 0.1).attr('stroke-width', 1.5).attr('stroke-dasharray', '3 7');
-
-    hubEnter.append('circle').attr('r', 115).attr('fill', 'none').attr('stroke', 'rgba(200, 155, 90, 0.25)').attr('stroke-width', 1);
-    hubEnter.append('text').attr('class', 'hub-title').attr('y', 12).text('LifeSight');
-    [-1, 1].forEach(dir => {
-      hubEnter.append('circle').attr('cx', dir * 80).attr('cy', 62).attr('r', 2).attr('fill', '#c89b5a').attr('fill-opacity', 0.8);
-    });
-
-    updateSelectionUI();
-  }
-
-  // ── ENGINE TICK ───────────────────────────────────────────────────────
-  d3.timer((elapsed) => {
-    ALL_STEPS.forEach((d, i) => {
-      if (!d.dragging) {
-        const floatX = Math.sin(elapsed / 1500 + i) * 10;
-        const floatY = Math.cos(elapsed / 1800 + i * 1.5) * 10;
-        d.x += (d.baseX + floatX - d.x) * 0.1;
-        d.y += (d.baseY + floatY - d.y) * 0.1;
+  ],
+  "encoding": {
+    "x": {
+      "field": "Universal Bin Label",
+      "type": "ordinal",
+      "sort": {
+        "field": "Bin ID",
+        "op": "min",
+        "order": "ascending"
+      },
+      "axis": {
+        "title": "Rate (Central Point)",
+        "labelAngle": -45,
+        "labelColor": "#666666"
       }
-    });
-
-    nodeLayer.selectAll('.node-group').attr('transform', d => `translate(${d.x}, ${d.y})`);
-
-    const pathFn = d => calculatePathCurve(d);
-    edgeLayer.selectAll('.link-path').attr('d', pathFn);
-    edgeLayer.selectAll('.link-flow').attr('d', pathFn);
-    loopLayer.selectAll('.link-path').attr('d', pathFn);
-    loopLayer.selectAll('.link-flow').attr('d', pathFn);
-  });
-
-  function calculatePathCurve(link) {
-    const s = ALL_STEPS.find(n => n.id === link.s);
-    const t = ALL_STEPS.find(n => n.id === link.t);
-    const hub = ALL_STEPS.find(n => n.id === 'lifesight');
-    
-    const rS = s.id === 'lifesight' ? 140 : 45;
-    const rT = t.id === 'lifesight' ? 145 : 55;
-    
-    const dx = t.x - s.x;
-    const dy = t.y - s.y;
-    const dist = Math.sqrt(dx*dx + dy*dy) || 1;
-    
-    const sx = s.x + (dx/dist) * rS;
-    const sy = s.y + (dy/dist) * rS;
-    const tx = t.x - (dx/dist) * rT;
-    const ty = t.y - (dy/dist) * rT;
-
-    // Explicit Straight Line Bypass Loop
-    if (link.reverse) {
-       return `M${sx},${sy} L${tx},${ty}`;
+    },
+    "xOffset": {
+      "field": "Formatted Year",
+      "type": "nominal",
+      "sort": {
+        "field": "Report Year",
+        "op": "min"
+      }
+    },
+    "y": {
+      "field": "Percentage",
+      "type": "quantitative",
+      "axis": {
+        "title": "% of Plans",
+        "format": ".0%",
+        "gridColor": "#EAEAEA",
+        "labelColor": "#666666"
+      }
+    },
+    "color": {
+      "field": "LegendLabel",
+      "type": "nominal",
+      "sort": {
+        "field": "LegendOrder",
+        "op": "min"
+      },
+      "scale": {
+        "range": [
+          "#702082",
+          "#EAC7F1",
+          "#F26E21",
+          "#F9B890",
+          "#007A86",
+          "#80BDC3"
+        ]
+      },
+      "legend": {
+        "title": null,
+        "orient": "top-right"
+      }
+    },
+    "tooltip": [
+      {
+        "field": "LegendLabel",
+        "title": "Series"
+      },
+      {
+        "field": "Universal Bin Label",
+        "title": "Bin Rate Block"
+      },
+      {
+        "field": "Percentage",
+        "title": "Percentage of Plans",
+        "format": ".1%"
+      }
+    ]
+  },
+  "layer": [
+    {
+      "transform": [
+        {
+          "filter": "datum.Scope == 'Baseline Bar Chart %'"
+        }
+      ],
+      "mark": {
+        "type": "bar",
+        "cornerRadiusEnd": 2
+      },
+      "params": [
+        {
+          "name": "hover",
+          "select": {
+            "type": "point",
+            "on": "mouseover"
+          }
+        }
+      ],
+      "encoding": {
+        "opacity": {
+          "condition": {
+            "param": "hover",
+            "value": 0.9
+          },
+          "value": 0.6
+        }
+      }
+    },
+    {
+      "transform": [
+        {
+          "filter": "datum.Scope == 'Country Bar Chart %'"
+        }
+      ],
+      "mark": {
+        "type": "point",
+        "shape": "square",
+        "size": 100,
+        "filled": true,
+        "opacity": 1,
+        "stroke": "white",
+        "strokeWidth": 1.5
+      }
+    },
+    {
+      "transform": [
+        {
+          "filter": "datum.Scope == 'Client Bar Chart %'"
+        }
+      ],
+      "mark": {
+        "type": "point",
+        "shape": "circle",
+        "size": 120,
+        "filled": true,
+        "opacity": 1,
+        "stroke": "white",
+        "strokeWidth": 1.5
+      }
+    },
+    {
+      "data": {
+        "values": [
+          {}
+        ]
+      },
+      "mark": {
+        "type": "text",
+        "text": "INCOMPLETE",
+        "fontSize": 60,
+        "fontWeight": "bold",
+        "color": "red",
+        "opacity": 0.4,
+        "angle": -30,
+        "align": "center",
+        "baseline": "middle",
+        "x": {
+          "expr": "width / 2"
+        },
+        "y": {
+          "expr": "height / 2"
+        }
+      }
     }
-
-    // Direct / Less curved links for the rest
-    const midX = (sx + tx) / 2;
-    const midY = (sy + ty) / 2;
-    
-    // Very tiny outward bump to prevent rigid straight lines crossing inner elements
-    const nx = midX - hub.x;
-    const ny = midY - hub.y;
-    const ndist = Math.sqrt(nx*nx + ny*ny) || 1;
-    const cx = midX + (nx/ndist) * 15; 
-    const cy = midY + (ny/ndist) * 15;
-    
-    return `M${sx},${sy} Q${cx},${cy} ${tx},${ty}`;
-  }
-
-  // ── UI PANEL LOGIC ────────────────────────────────────────────────────
-  const panelEl = document.getElementById('panel');
-  const accent = panelEl.querySelector('.panel-accent');
-
-  function updateSelectionUI() {
-    nodeLayer.selectAll('.ring-select').attr('opacity', d => d.id === activeId ? 0.9 : 0);
-    nodeLayer.selectAll('.ring-main').attr('stroke-width', d => d.id === activeId ? 3.5 : 2);
-  }
-
-  function selectStep(step) {
-    activeId = step.id;
-    updateSelectionUI();
-    const phase = PHASES[step.phase];
-    const accentColor = phase.hex;
-
-    panelEl.style.setProperty('--panel-color', accentColor);
-    accent.style.background = accentColor;
-
-    document.getElementById('p-crumb').textContent = step.phase_label || phase.label;
-    document.getElementById('p-crumb').style.color = accentColor;
-    document.getElementById('p-title').innerHTML = step.title;
-    document.getElementById('p-body').innerHTML = `<p>${step.body}</p>`;
-
-    // Toggle working details dynamically
-    const detailsLabel = document.getElementById('p-details-label');
-    const detailsEl = document.getElementById('p-details');
-    if (step.details && step.details.length > 0) {
-      detailsLabel.style.display = 'block';
-      detailsEl.innerHTML = step.details.map((d, i) =>
-        `<div class="panel-detail">
-          <span class="detail-num">${String(i + 1).padStart(2, '0')}</span>
-          <span class="detail-text">${d}</span>
-        </div>`
-      ).join('');
-    } else {
-      detailsLabel.style.display = 'none';
-      detailsEl.innerHTML = '';
-    }
-
-    // Toggle hand-off dynamically
-    const outputContainer = document.getElementById('p-output-container');
-    const outputEl = document.getElementById('p-output');
-    if (step.output) {
-      outputContainer.style.display = 'block';
-      outputEl.textContent = step.output;
-    } else {
-      outputContainer.style.display = 'none';
-      outputEl.textContent = '';
-    }
-
-    const asideEl = document.getElementById('p-aside');
-    if (step.aside) {
-      asideEl.innerHTML = step.aside;
-      asideEl.style.display = 'block';
-    } else {
-      asideEl.style.display = 'none';
-    }
-
-    let navText = '';
-    if (step.id === 'lifesight') {
-       navText = 'the hub · where onboarding becomes insight';
-    } else if (step.id.startsWith('template')) {
-       navText = `step 01 · of · 11`;
-    } else {
-       const idx = ALL_STEPS.findIndex(s => s.id === step.id) - 1; 
-       navText = `step ${String(idx + 1).padStart(2, '0')} · of · 11`;
-    }
-    document.getElementById('p-nav').textContent = navText;
-
-    panelEl.classList.remove('hidden');
-  }
-
-  function closePanel() {
-    activeId = null;
-    updateSelectionUI();
-    panelEl.classList.add('hidden');
-  }
-
-  document.getElementById('p-close').addEventListener('click', closePanel);
-  document.addEventListener('keydown', e => { if (e.key === 'Escape') closePanel(); });
-
-  // ── BOOTSTRAP ─────────────────────────────────────────────────────────
-  initLayout();
-  draw();
-  setTimeout(() => selectStep(HUB), 600);
-
-  window.addEventListener('resize', () => {
-    W = window.innerWidth;
-    H = window.innerHeight;
-    svg.attr('viewBox', [0, 0, W, H]);
-    initLayout(); 
-    draw();       
-  });
-</script>
-</body>
-</html>
+  ]
+}
