@@ -1,0 +1,1301 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>LifeSight — Data Journey</title>
+<link href="https://fonts.googleapis.com/css2?family=Fraunces:ital,opsz,wght@0,9..144,300;0,9..144,400;0,9..144,500;0,9..144,600;1,9..144,400&family=JetBrains+Mono:wght@300;400;500&family=Inter:wght@300;400;500;600&display=swap" rel="stylesheet">
+<script src="https://cdnjs.cloudflare.com/ajax/libs/d3/7.9.0/d3.min.js"></script>
+<style>
+  :root {
+    --bg: #f5f1ea;
+    --bg-deep: #ebe5d9;
+    --ink: #1a1814;
+    --ink-soft: #4a453c;
+    --ink-faint: #8a8373;
+    --rule: #d4ccbc;
+    --paper: #faf7f1;
+
+    --c-onboard: #b8593e;   /* terracotta */
+    --c-hub: #2d4a3e;        /* deep green */
+    --c-analytics: #3a5a78;  /* muted blue */
+    --c-accent: #c89b5a;     /* ochre */
+  }
+
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+
+  html, body { height: 100%; }
+  body {
+    font-family: 'Fraunces', serif;
+    background: var(--bg);
+    color: var(--ink);
+    overflow: hidden;
+    position: relative;
+  }
+
+  /* Paper texture */
+  body::before {
+    content: '';
+    position: fixed; inset: 0; z-index: 0; pointer-events: none;
+    background-image:
+      radial-gradient(circle at 20% 30%, rgba(139, 115, 85, 0.05) 0%, transparent 40%),
+      radial-gradient(circle at 80% 70%, rgba(139, 115, 85, 0.04) 0%, transparent 40%);
+  }
+
+  /* Subtle grain */
+  body::after {
+    content: '';
+    position: fixed; inset: 0; z-index: 1; pointer-events: none;
+    opacity: 0.35;
+    background-image: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='200' height='200'><filter id='n'><feTurbulence baseFrequency='0.9' numOctaves='2' seed='4'/><feColorMatrix values='0 0 0 0 0.1 0 0 0 0 0.09 0 0 0 0 0.08 0 0 0 0.08 0'/></filter><rect width='200' height='200' filter='url(%23n)'/></svg>");
+  }
+
+  /* ── HEADER ─────────────────────────────────────────── */
+  header {
+    position: fixed; top: 0; left: 0; right: 0;
+    padding: 18px 32px 14px;
+    background: linear-gradient(to bottom, var(--bg) 70%, transparent);
+    z-index: 30;
+    display: flex; align-items: flex-end; justify-content: space-between;
+  }
+  .title-block {
+    display: flex; align-items: baseline; gap: 14px;
+  }
+  .mark {
+    font-family: 'Fraunces', serif;
+    font-weight: 500;
+    font-size: 1.3rem;
+    font-style: italic;
+    color: var(--ink);
+    letter-spacing: -0.5px;
+  }
+  .mark em {
+    font-weight: 600;
+    font-style: normal;
+  }
+  .divider-dot {
+    width: 3px; height: 3px; border-radius: 50%;
+    background: var(--ink-faint);
+    margin-bottom: 4px;
+  }
+  .subtitle {
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 0.68rem;
+    font-weight: 400;
+    color: var(--ink-faint);
+    letter-spacing: 1px;
+    text-transform: uppercase;
+    margin-bottom: 2px;
+  }
+  .header-right {
+    display: flex; flex-direction: column; align-items: flex-end; gap: 2px;
+  }
+  .stamp {
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 0.62rem;
+    color: var(--ink-faint);
+    letter-spacing: 1.5px;
+    text-transform: uppercase;
+  }
+  .stamp strong {
+    color: var(--ink-soft);
+    font-weight: 500;
+  }
+
+  /* ── CANVAS ─────────────────────────────────────────── */
+  #canvas { position: absolute; inset: 0; padding-top: 68px; z-index: 2; }
+  svg { width: 100%; height: 100%; display: block; }
+
+  /* ── LEGEND (bottom left) ───────────────────────────── */
+  .legend {
+    position: fixed;
+    bottom: 22px; left: 32px;
+    z-index: 15;
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 0.65rem;
+    color: var(--ink-faint);
+    letter-spacing: 0.5px;
+    display: flex; flex-direction: column; gap: 6px;
+    max-width: 260px;
+  }
+  .legend-row { display: flex; align-items: center; gap: 8px; }
+  .legend-swatch { width: 10px; height: 10px; border-radius: 2px; flex-shrink: 0; }
+  .legend-hint {
+    font-style: italic;
+    font-family: 'Fraunces', serif;
+    font-size: 0.78rem;
+    color: var(--ink-soft);
+    margin-top: 4px;
+    line-height: 1.4;
+  }
+
+  /* ── SVG TEXT STYLES ────────────────────────────────── */
+  .phase-label {
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 10px;
+    font-weight: 500;
+    letter-spacing: 2.5px;
+    text-transform: uppercase;
+    pointer-events: none;
+  }
+  .phase-num {
+    font-family: 'Fraunces', serif;
+    font-style: italic;
+    font-size: 13px;
+    font-weight: 400;
+    pointer-events: none;
+  }
+  .node-label {
+    font-family: 'Fraunces', serif;
+    font-size: 13px;
+    font-weight: 500;
+    fill: var(--ink);
+    text-anchor: middle;
+    pointer-events: none;
+    letter-spacing: -0.2px;
+  }
+  .node-sub {
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 8.5px;
+    font-weight: 400;
+    fill: var(--ink-faint);
+    text-anchor: middle;
+    pointer-events: none;
+    letter-spacing: 0.5px;
+    text-transform: uppercase;
+  }
+  .node-num {
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 9px;
+    font-weight: 500;
+    fill: var(--ink-faint);
+    text-anchor: middle;
+    pointer-events: none;
+    letter-spacing: 0.5px;
+  }
+  .edge-label {
+    font-family: 'Fraunces', serif;
+    font-style: italic;
+    font-size: 10px;
+    font-weight: 400;
+    fill: var(--ink-faint);
+    text-anchor: middle;
+    pointer-events: none;
+  }
+  .hub-title {
+    font-family: 'Fraunces', serif;
+    font-size: 28px;
+    font-weight: 500;
+    font-style: italic;
+    fill: white;
+    text-anchor: middle;
+    pointer-events: none;
+    letter-spacing: -0.5px;
+  }
+  .hub-sub {
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 8.5px;
+    font-weight: 400;
+    fill: rgba(255,255,255,0.6);
+    text-anchor: middle;
+    pointer-events: none;
+    letter-spacing: 2px;
+    text-transform: uppercase;
+  }
+  .branch-label {
+    font-family: 'Fraunces', serif;
+    font-style: italic;
+    font-size: 11px;
+    font-weight: 400;
+    fill: var(--ink-soft);
+    pointer-events: none;
+  }
+
+  /* Animated flow on edges */
+  .flow {
+    stroke-dasharray: 2 6;
+    animation: dash 3s linear infinite;
+  }
+  @keyframes dash { to { stroke-dashoffset: -24; } }
+
+  .flow-reverse {
+    stroke-dasharray: 2 6;
+    animation: dash-rev 3s linear infinite;
+  }
+  @keyframes dash-rev { to { stroke-dashoffset: 24; } }
+
+  /* Pulse for hub */
+  .pulse {
+    animation: pulse 3.5s ease-in-out infinite;
+    transform-origin: center;
+    transform-box: fill-box;
+  }
+  @keyframes pulse {
+    0%, 100% { transform: scale(1); opacity: 0.15; }
+    50% { transform: scale(1.08); opacity: 0.05; }
+  }
+
+  /* ── PANEL ──────────────────────────────────────────── */
+  #panel {
+    position: fixed; top: 68px; right: 0;
+    width: 400px; height: calc(100vh - 68px);
+    background: var(--paper);
+    border-left: 1px solid var(--rule);
+    z-index: 20;
+    display: flex; flex-direction: column;
+    transition: transform 0.5s cubic-bezier(0.16, 1, 0.3, 1);
+    box-shadow: -20px 0 40px rgba(26, 24, 20, 0.06);
+  }
+  #panel.hidden { transform: translateX(100%); }
+
+  .panel-accent {
+    position: absolute; top: 0; left: 0; right: 0;
+    height: 4px;
+    background: var(--panel-color, var(--c-onboard));
+  }
+
+  .panel-inner {
+    padding: 34px 32px 20px;
+    flex: 1;
+    overflow-y: auto;
+    display: flex; flex-direction: column;
+    gap: 22px;
+  }
+
+  .panel-header {
+    display: flex; flex-direction: column; gap: 8px;
+  }
+  .panel-crumb {
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 0.68rem;
+    letter-spacing: 2px;
+    text-transform: uppercase;
+    color: var(--panel-color, var(--c-onboard));
+    font-weight: 500;
+  }
+  .panel-title {
+    font-family: 'Fraunces', serif;
+    font-size: 1.9rem;
+    font-weight: 500;
+    line-height: 1.1;
+    color: var(--ink);
+    letter-spacing: -1px;
+  }
+  .panel-title em {
+    font-style: italic;
+    font-weight: 400;
+    color: var(--ink-soft);
+  }
+
+  .panel-phase {
+    font-family: 'Fraunces', serif;
+    font-style: italic;
+    font-size: 0.9rem;
+    color: var(--ink-faint);
+    margin-top: 2px;
+  }
+
+  .rule {
+    height: 1px;
+    background: var(--rule);
+  }
+  .rule-dotted {
+    height: 1px;
+    background-image: linear-gradient(to right, var(--rule) 50%, transparent 50%);
+    background-size: 6px 1px;
+  }
+
+  .section-label {
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 0.6rem;
+    font-weight: 500;
+    letter-spacing: 2px;
+    text-transform: uppercase;
+    color: var(--ink-faint);
+    margin-bottom: 10px;
+  }
+
+  .panel-body {
+    font-family: 'Fraunces', serif;
+    font-size: 0.98rem;
+    line-height: 1.55;
+    color: var(--ink-soft);
+  }
+
+  .panel-body p + p {
+    margin-top: 10px;
+  }
+
+  .panel-detail {
+    display: flex;
+    gap: 14px;
+    margin-bottom: 12px;
+  }
+  .detail-num {
+    font-family: 'Fraunces', serif;
+    font-style: italic;
+    font-size: 1.1rem;
+    color: var(--panel-color, var(--c-onboard));
+    line-height: 1.4;
+    flex-shrink: 0;
+    min-width: 18px;
+  }
+  .detail-text {
+    font-family: 'Fraunces', serif;
+    font-size: 0.92rem;
+    line-height: 1.55;
+    color: var(--ink-soft);
+  }
+
+  .panel-output {
+    background: var(--bg-deep);
+    padding: 14px 16px;
+    border-left: 3px solid var(--panel-color, var(--c-onboard));
+    border-radius: 2px;
+  }
+  .output-label {
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 0.6rem;
+    font-weight: 500;
+    letter-spacing: 2px;
+    text-transform: uppercase;
+    color: var(--ink-faint);
+    margin-bottom: 6px;
+  }
+  .output-val {
+    font-family: 'Fraunces', serif;
+    font-size: 0.95rem;
+    font-style: italic;
+    color: var(--ink);
+  }
+
+  .panel-aside {
+    font-family: 'Fraunces', serif;
+    font-style: italic;
+    font-size: 0.88rem;
+    color: var(--ink-faint);
+    padding: 10px 14px;
+    background: rgba(200, 155, 90, 0.08);
+    border-radius: 2px;
+    line-height: 1.5;
+  }
+  .panel-aside strong {
+    font-style: normal;
+    font-weight: 500;
+    color: var(--c-accent);
+  }
+
+  .panel-foot {
+    padding: 16px 32px 22px;
+    border-top: 1px solid var(--rule);
+    display: flex; justify-content: space-between; align-items: center;
+  }
+  .foot-nav {
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 0.65rem;
+    color: var(--ink-faint);
+    letter-spacing: 1px;
+  }
+  .panel-close {
+    padding: 8px 16px;
+    background: transparent;
+    border: 1px solid var(--rule);
+    color: var(--ink-soft);
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 0.68rem;
+    letter-spacing: 1.5px;
+    text-transform: uppercase;
+    cursor: pointer;
+    transition: all 0.2s;
+    border-radius: 2px;
+  }
+  .panel-close:hover {
+    background: var(--ink);
+    color: var(--paper);
+    border-color: var(--ink);
+  }
+
+  /* Scrollbar */
+  .panel-inner::-webkit-scrollbar { width: 6px; }
+  .panel-inner::-webkit-scrollbar-track { background: transparent; }
+  .panel-inner::-webkit-scrollbar-thumb { background: var(--rule); border-radius: 3px; }
+
+  /* Corner ornaments */
+  .corner {
+    position: fixed;
+    width: 28px; height: 28px;
+    z-index: 5;
+    pointer-events: none;
+  }
+  .corner::before, .corner::after {
+    content: '';
+    position: absolute;
+    background: var(--ink-faint);
+    opacity: 0.35;
+  }
+  .corner.tl { top: 62px; left: 22px; }
+  .corner.tl::before { top: 0; left: 0; width: 12px; height: 1px; }
+  .corner.tl::after { top: 0; left: 0; width: 1px; height: 12px; }
+
+  .corner.tr { top: 62px; right: 22px; }
+  .corner.tr::before { top: 0; right: 0; width: 12px; height: 1px; }
+  .corner.tr::after { top: 0; right: 0; width: 1px; height: 12px; }
+
+  .corner.bl { bottom: 18px; left: 22px; }
+  .corner.bl::before { bottom: 0; left: 0; width: 12px; height: 1px; }
+  .corner.bl::after { bottom: 0; left: 0; width: 1px; height: 12px; }
+
+  .corner.br { bottom: 18px; right: 22px; }
+  .corner.br::before { bottom: 0; right: 0; width: 12px; height: 1px; }
+  .corner.br::after { bottom: 0; right: 0; width: 1px; height: 12px; }
+
+  /* Hover states on nodes */
+  .node-hit { cursor: pointer; }
+  .node-hit:hover .node-circle {
+    filter: brightness(1.03);
+  }
+
+  @media (max-width: 1100px) {
+    #panel { width: 340px; }
+  }
+</style>
+</head>
+<body>
+
+<header>
+  <div class="title-block">
+    <div style="display: flex; flex-direction: column; gap: 2px;">
+      <span class="subtitle">WTW · LifeSight</span>
+      <span class="mark"><em>The</em> Data Journey</span>
+    </div>
+  </div>
+  <div class="header-right">
+    <span class="stamp">from <strong>client submission</strong> to <strong>live insight</strong></span>
+    <span class="stamp" style="font-size: 0.56rem; opacity: 0.6;">click any step to explore</span>
+  </div>
+</header>
+
+<div class="corner tl"></div>
+<div class="corner tr"></div>
+<div class="corner bl"></div>
+<div class="corner br"></div>
+
+<div id="canvas"></div>
+
+<div class="legend">
+  <div class="legend-row">
+    <div class="legend-swatch" style="background: var(--c-onboard);"></div>
+    <span>ONBOARDING &amp; UPDATES</span>
+  </div>
+  <div class="legend-row">
+    <div class="legend-swatch" style="background: var(--c-hub);"></div>
+    <span>LIFESIGHT — SOURCE OF TRUTH</span>
+  </div>
+  <div class="legend-row">
+    <div class="legend-swatch" style="background: var(--c-analytics);"></div>
+    <span>ANALYTICS &amp; REPORTING</span>
+  </div>
+</div>
+
+<div id="panel" class="hidden">
+  <div class="panel-accent"></div>
+  <div class="panel-inner">
+    <div class="panel-header">
+      <span class="panel-crumb" id="p-crumb"></span>
+      <h2 class="panel-title" id="p-title"></h2>
+      <span class="panel-phase" id="p-phase"></span>
+    </div>
+    <div class="rule-dotted"></div>
+
+    <div>
+      <div class="section-label">What happens here</div>
+      <div class="panel-body" id="p-body"></div>
+    </div>
+
+    <div>
+      <div class="section-label">Working detail</div>
+      <div id="p-details"></div>
+    </div>
+
+    <div class="panel-output">
+      <div class="output-label">Hand-off</div>
+      <div class="output-val" id="p-output"></div>
+    </div>
+
+    <div class="panel-aside" id="p-aside" style="display: none;"></div>
+  </div>
+  <div class="panel-foot">
+    <span class="foot-nav" id="p-nav">step · of ·</span>
+    <button class="panel-close" id="p-close">Close</button>
+  </div>
+</div>
+
+<script>
+  // ── MODEL ─────────────────────────────────────────────────────────────
+  const PHASES = {
+    onboard:   { label: 'Onboarding & Updates', color: 'var(--c-onboard)',  hex: '#b8593e' },
+    hub:       { label: 'LifeSight',            color: 'var(--c-hub)',      hex: '#2d4a3e' },
+    analytics: { label: 'Analytics',            color: 'var(--c-analytics)', hex: '#3a5a78' },
+  };
+
+  // Onboarding arc (arranged on an arc flowing into the hub from the left)
+  const ONBOARD = [
+    {
+      id: 'template',
+      num: '01',
+      phase: 'onboard',
+      name: 'The Template',
+      sub: 'Client Submission',
+      title: 'A shared starting line',
+      phase_label: 'Step 1 · Intake',
+      body: 'The client fills in their member and scheme data using our LifeSight template — a structure we\'ve already tuned for everything downstream. It\'s the fastest route in.',
+      aside: '<strong>Flexibility:</strong> if a client pushes back on the template, we can take their format instead and do the mapping on our side. It slows us slightly, but onboarding shouldn\'t hinge on a spreadsheet layout.',
+      details: [
+        'Pre-formatted columns, field definitions, and validation hints baked in',
+        'Reduces back-and-forth — clients know exactly what we need',
+        'Versioned so we can track template changes across onboardings',
+      ],
+      output: 'A populated client data file'
+    },
+    {
+      id: 'datalink',
+      num: '02',
+      phase: 'onboard',
+      name: 'DataLink',
+      sub: 'Secure Transfer',
+      title: 'Getting the data to us, safely',
+      phase_label: 'Step 2 · Transfer',
+      body: 'The client sends their file through DataLink — our secure transfer channel — keeping the whole exchange inside a protected environment. (We\'re also open to alternatives where a client has an existing secure setup.)',
+      details: [
+        'Encrypted in transit, access logged end-to-end',
+        'No file ever arrives by email or unmanaged share',
+        'Audit trail from the moment the client hits send',
+      ],
+      output: 'A received, logged client submission'
+    },
+    {
+      id: 'tct',
+      num: '03',
+      phase: 'onboard',
+      name: 'TCT Storage',
+      sub: 'Raw Data Folder',
+      title: 'A home for the raw file',
+      phase_label: 'Step 3 · Storage',
+      body: 'Every client gets a dedicated folder on TCT. The original submission lands here untouched — so we always have the source of truth to return to, no matter what happens downstream.',
+      details: [
+        'One folder per client, access-controlled',
+        'Raw file preserved exactly as received',
+        'Becomes the audit anchor for everything that follows',
+      ],
+      output: 'A safely stored, untouched raw file'
+    },
+    {
+      id: 'dvs-import',
+      num: '04',
+      phase: 'onboard',
+      name: 'DVS Import',
+      sub: 'Structure Mapping',
+      title: 'Into the validation engine',
+      phase_label: 'Step 4 · Import',
+      body: 'The raw file is pulled into DVS — our data validation system — configured specifically for LifeSight. This is where file structure meets scheme logic: we map the client\'s columns to the fields LifeSight expects.',
+      aside: '<strong>One-time setup:</strong> the LifeSight-ready DVS configuration gets built once and reused across every client onboarding.',
+      details: [
+        'Field-level mapping to LifeSight\'s input schema',
+        'Handles both template submissions and client-native formats',
+        'Readies the data for rule-based validation',
+      ],
+      output: 'A DVS-loaded, mapped dataset'
+    },
+    {
+      id: 'checks',
+      num: '05',
+      phase: 'onboard',
+      name: 'Quality Checks',
+      sub: 'Reasonableness Rules',
+      title: 'The heart of validation',
+      phase_label: 'Step 5 · Validate',
+      body: 'A library of reasonableness and quality rules runs across every record. We\'re not just checking if data exists — we\'re asking whether it makes sense in the context of the scheme.',
+      details: [
+        'Ranges, mandatory fields, referential integrity',
+        'Cross-field logic (e.g. joining dates vs birth dates)',
+        'Rules tailored to LifeSight\'s scheme requirements',
+        'Failures tagged with descriptive error codes, not cryptic flags',
+      ],
+      output: 'Records split into clean & flagged'
+    },
+    {
+      id: 'queries',
+      num: '06',
+      phase: 'onboard',
+      name: 'Queries File',
+      sub: 'Client Dialogue',
+      title: 'Back to the client, honestly',
+      phase_label: 'Step 6 · Resolve',
+      body: 'DVS produces a queries file — every flagged record, explained in plain language. We send it to the client, they respond with corrections or confirmations, and the conversation goes on until the file comes back clean.',
+      aside: '<strong>A queries file is generated every time</strong>, even if empty. It\'s a record that the check ran, which matters for audit.',
+      details: [
+        'Each query carries the rule it failed and a plain-English description',
+        'Client returns a resolution file; we apply the corrections in DVS',
+        'Iterative — sometimes a file cycles two or three times before landing',
+      ],
+      output: 'A validated, client-confirmed dataset'
+    },
+    {
+      id: 'lifesight-extract',
+      num: '07',
+      phase: 'onboard',
+      name: 'LifeSight Report',
+      sub: 'Import-ready',
+      title: 'Ready to go home',
+      phase_label: 'Step 7 · Export',
+      body: 'Once the data is clean, DVS produces a LifeSight-ready report — formatted precisely to what LifeSight needs at import. No more transformations, no more questions.',
+      details: [
+        'Schema-perfect export aligned to LifeSight\'s ingestion spec',
+        'One-shot import, no manual reformatting downstream',
+        'The moment the onboarding becomes real data in the system',
+      ],
+      output: 'LifeSight-ready import file'
+    },
+  ];
+
+  const HUB = {
+    id: 'lifesight',
+    phase: 'hub',
+    name: 'LifeSight',
+    title: 'The single source of truth',
+    phase_label: 'Central · Platform',
+    body: 'Everything before this point is about getting data in cleanly. Everything after is about putting it to work. LifeSight holds the authoritative record for every scheme and member — the hub that onboarding feeds and analytics draws from.',
+    details: [
+      'Atomic updates: a change either fully commits or fully reverts',
+      'Complete change log for audit and reconciliation',
+      'One record per client, always current, always trusted',
+      'The pivot point between <em>getting data right</em> and <em>getting value out</em>',
+    ],
+    output: 'Authoritative LifeSight dataset'
+  };
+
+  const ANALYTICS = [
+    {
+      id: 'extract',
+      num: '08',
+      phase: 'analytics',
+      name: 'Data Extract',
+      sub: 'Scheduled Pull',
+      title: 'Pulling the latest view',
+      phase_label: 'Step 8 · Extract',
+      body: 'A scheduled job extracts the current LifeSight dataset and drops it into a dedicated TCT folder. Nothing manual, nothing forgotten — the extracts just appear, on time.',
+      details: [
+        'Incremental where possible — dashboards stay fresh without full rebuilds',
+        'Shape-transformed into the dimensional model Power BI expects',
+        'Stored in TCT for traceability and reproducibility',
+      ],
+      output: 'Reporting-ready extract in TCT'
+    },
+    {
+      id: 'powerbi',
+      num: '09',
+      phase: 'analytics',
+      name: 'Power BI',
+      sub: 'Automatic Refresh',
+      title: 'The dashboards wake up',
+      phase_label: 'Step 9 · Report',
+      body: 'Power BI is pointed at the TCT folder and refreshes automatically. No one logs in to press a button — if there\'s new data, the dashboards already have it.',
+      details: [
+        'Refresh schedule tied to the extract cadence',
+        'Stakeholders get near real-time visibility',
+        'Folder-based ingestion makes the pipeline self-healing',
+      ],
+      output: 'Live, current dashboards'
+    },
+    {
+      id: 'dashboard',
+      num: '10',
+      phase: 'analytics',
+      name: 'Dashboards',
+      sub: 'Tailored Views',
+      title: 'Built for us, built for them',
+      phase_label: 'Step 10 · Surface',
+      body: 'We design the dashboards around what the team and the client actually want to see — not a generic template. KPIs, data quality flags, scheme-level views, pipeline health.',
+      details: [
+        'Custom views for internal teams and senior leadership',
+        'Data quality surfaced alongside business metrics',
+        'Alert thresholds for anomalies and processing lags',
+      ],
+      output: 'Curated, decision-ready views'
+    },
+    {
+      id: 'analysis',
+      num: '11',
+      phase: 'analytics',
+      name: 'Analysis',
+      sub: 'Insight & Action',
+      title: 'Where the value lands',
+      phase_label: 'Step 11 · Insight',
+      body: 'The final step — and the whole point. Analysts read the dashboards, interpret the signals, and turn the data into decisions. Everything upstream exists to make this part clean and trustworthy.',
+      details: [
+        'Trend analysis across schemes and cohorts',
+        'Data quality feedback loops back into the onboarding rules',
+        'Insights inform both WTW strategy and client conversations',
+      ],
+      output: 'Decisions backed by trusted data'
+    },
+  ];
+
+  const ALL_STEPS = [...ONBOARD, HUB, ...ANALYTICS];
+
+  // ── LAYOUT ────────────────────────────────────────────────────────────
+  let W = window.innerWidth;
+  let H = window.innerHeight;
+  let POS = {};
+
+  function layout() {
+    POS = {};
+    const leftPad = 80;
+    const rightPad = 420; // panel space + margin
+    const usableW = W - leftPad - rightPad;
+    const midY = 68 + (H - 68) / 2 + 10;
+
+    // Hub sits at 55% across
+    const hubX = leftPad + usableW * 0.52;
+    const hubY = midY;
+    POS['lifesight'] = { x: hubX, y: hubY };
+
+    // Onboarding: arc curving down-and-right into the hub from the upper-left
+    // 7 nodes arranged in a gentle arc
+    const onboardStartX = leftPad + 30;
+    const onboardEndX = hubX - 170;
+    const onboardCount = ONBOARD.length;
+
+    ONBOARD.forEach((n, i) => {
+      const t = i / (onboardCount - 1);
+      // Horizontal progress
+      const x = onboardStartX + (onboardEndX - onboardStartX) * t;
+      // Vertical arc: dips down then rises into hub
+      const arcAmp = Math.min(160, (H - 68) * 0.22);
+      // sin curve that starts high, dips, ends at hub level
+      const y = midY - arcAmp * 0.4 + Math.sin(t * Math.PI) * arcAmp * 0.7 - (1 - t) * arcAmp * 0.3;
+      POS[n.id] = { x, y };
+    });
+
+    // Analytics: fans out from the hub to the right
+    const analyticsStartX = hubX + 170;
+    const analyticsEndX = W - rightPad + 20;
+    const analyticsCount = ANALYTICS.length;
+
+    ANALYTICS.forEach((n, i) => {
+      const t = i / (analyticsCount - 1);
+      const x = analyticsStartX + (analyticsEndX - analyticsStartX) * t;
+      // Slight upward arc on the analytics side for visual balance
+      const arcAmp = Math.min(100, (H - 68) * 0.12);
+      const y = midY - Math.sin(t * Math.PI) * arcAmp * 0.5 - arcAmp * 0.1;
+      POS[n.id] = { x, y };
+    });
+  }
+
+  // ── SVG SETUP ─────────────────────────────────────────────────────────
+  const svg = d3.select('#canvas').append('svg').attr('viewBox', [0, 0, W, H]);
+  const defs = svg.append('defs');
+
+  // Drop shadow
+  const shadow = defs.append('filter')
+    .attr('id', 'shadow')
+    .attr('x', '-50%').attr('y', '-50%')
+    .attr('width', '200%').attr('height', '200%');
+  shadow.append('feDropShadow')
+    .attr('dx', 0).attr('dy', 3)
+    .attr('stdDeviation', 4)
+    .attr('flood-color', 'rgba(26, 24, 20, 0.15)');
+
+  // Hub glow
+  const hubGlow = defs.append('filter')
+    .attr('id', 'hub-glow')
+    .attr('x', '-50%').attr('y', '-50%')
+    .attr('width', '200%').attr('height', '200%');
+  hubGlow.append('feGaussianBlur').attr('stdDeviation', 18).attr('result', 'blur');
+  const hubMerge = hubGlow.append('feMerge');
+  hubMerge.append('feMergeNode').attr('in', 'blur');
+  hubMerge.append('feMergeNode').attr('in', 'SourceGraphic');
+
+  // Arrowheads
+  ['onboard', 'analytics', 'loop'].forEach(phaseKey => {
+    const color = phaseKey === 'onboard' ? '#b8593e'
+                : phaseKey === 'analytics' ? '#3a5a78'
+                : '#b8593e';
+    defs.append('marker')
+      .attr('id', `arr-${phaseKey}`)
+      .attr('viewBox', '0 -3 6 6')
+      .attr('refX', 6).attr('refY', 0)
+      .attr('markerWidth', 5).attr('markerHeight', 5)
+      .attr('orient', 'auto')
+      .append('path')
+      .attr('d', 'M0,-3L6,0L0,3Z')
+      .attr('fill', color)
+      .attr('fill-opacity', 0.6);
+  });
+
+  // Radial gradients for nodes
+  Object.values(PHASES).forEach(p => {
+    const id = p.label.toLowerCase().replace(/\W+/g, '-');
+  });
+
+  // Layers
+  const bgLayer = svg.append('g').attr('class', 'bg-layer');
+  const edgeLayer = svg.append('g').attr('class', 'edge-layer');
+  const nodeLayer = svg.append('g').attr('class', 'node-layer');
+  const labelLayer = svg.append('g').attr('class', 'label-layer');
+
+  // ── DRAW ──────────────────────────────────────────────────────────────
+  let activeId = null;
+
+  function draw() {
+    bgLayer.selectAll('*').remove();
+    edgeLayer.selectAll('*').remove();
+    nodeLayer.selectAll('*').remove();
+    labelLayer.selectAll('*').remove();
+
+    const hub = POS['lifesight'];
+
+    // ── Background phase bands (very subtle) ──
+    // Onboarding band
+    const onboardXs = ONBOARD.map(n => POS[n.id].x);
+    const onboardYs = ONBOARD.map(n => POS[n.id].y);
+    const obMinX = Math.min(...onboardXs) - 70;
+    const obMaxX = Math.max(...onboardXs) + 70;
+    const obMinY = Math.min(...onboardYs) - 80;
+    const obMaxY = Math.max(...onboardYs) + 80;
+
+    // Phase labels - positioned above arcs
+    labelLayer.append('text')
+      .attr('class', 'phase-label')
+      .attr('x', obMinX + 12)
+      .attr('y', 90)
+      .attr('fill', '#b8593e')
+      .attr('opacity', 0.7)
+      .text('I · Onboarding & Updates');
+
+    labelLayer.append('text')
+      .attr('class', 'phase-num')
+      .attr('x', obMinX + 12)
+      .attr('y', 108)
+      .attr('fill', '#8a8373')
+      .text('client submission through to import');
+
+    // Analytics phase label
+    const anaXs = ANALYTICS.map(n => POS[n.id].x);
+    const anaMinX = Math.min(...anaXs);
+    const anaMaxX = Math.max(...anaXs);
+
+    labelLayer.append('text')
+      .attr('class', 'phase-label')
+      .attr('x', anaMinX - 20)
+      .attr('y', 90)
+      .attr('fill', '#3a5a78')
+      .attr('opacity', 0.7)
+      .text('II · Analytics & Reporting');
+
+    labelLayer.append('text')
+      .attr('class', 'phase-num')
+      .attr('x', anaMinX - 20)
+      .attr('y', 108)
+      .attr('fill', '#8a8373')
+      .text('data to dashboards to decisions');
+
+    // ── Onboarding edges (flowing curve through all nodes, into hub) ──
+    // Build a single smooth path through all onboarding points + hub
+    const onboardPath = ONBOARD.map(n => POS[n.id]).concat([hub]);
+
+    // Draw segment edges with flow animation
+    for (let i = 0; i < onboardPath.length - 1; i++) {
+      const s = onboardPath[i];
+      const t = onboardPath[i + 1];
+      const isLast = i === onboardPath.length - 2;
+
+      // Compute gentle bezier
+      const dx = t.x - s.x;
+      const dy = t.y - s.y;
+      const midX = s.x + dx * 0.5;
+      const ctrl1X = s.x + dx * 0.5;
+      const ctrl1Y = s.y;
+      const ctrl2X = s.x + dx * 0.5;
+      const ctrl2Y = t.y;
+
+      // Shortening for arrowhead near last segment (into hub)
+      let sx = s.x, sy = s.y, tx = t.x, ty = t.y;
+      if (i > 0) {
+        const angle = Math.atan2(s.y - (onboardPath[i-1].y), s.x - (onboardPath[i-1].x));
+        sx = s.x + Math.cos(angle) * 32;
+        sy = s.y + Math.sin(angle) * 32;
+      } else {
+        sx = s.x + 32;
+      }
+      if (isLast) {
+        // Shorten into hub circle
+        const hubR = 115;
+        const angle = Math.atan2(ty - sy, tx - sx);
+        tx = t.x - Math.cos(angle) * hubR;
+        ty = t.y - Math.sin(angle) * hubR;
+      } else {
+        const angle = Math.atan2(t.y - s.y, t.x - s.x);
+        tx = t.x - Math.cos(angle) * 32;
+        ty = t.y - Math.sin(angle) * 32;
+      }
+
+      const path = `M${sx},${sy} C${ctrl1X},${ctrl1Y} ${ctrl2X},${ctrl2Y} ${tx},${ty}`;
+
+      // Base line
+      edgeLayer.append('path')
+        .attr('d', path)
+        .attr('fill', 'none')
+        .attr('stroke', '#b8593e')
+        .attr('stroke-opacity', 0.15)
+        .attr('stroke-width', 1);
+
+      // Flow animation line
+      edgeLayer.append('path')
+        .attr('d', path)
+        .attr('class', 'flow')
+        .attr('fill', 'none')
+        .attr('stroke', '#b8593e')
+        .attr('stroke-opacity', 0.55)
+        .attr('stroke-width', 1.2)
+        .attr('marker-end', isLast ? 'url(#arr-onboard)' : null);
+    }
+
+    // Query-resolution loop: arc from 'queries' back to 'dvs-import' showing iteration
+    const qPos = POS['queries'];
+    const dvsPos = POS['dvs-import'];
+    const loopCtrlY = Math.max(qPos.y, dvsPos.y) + 70;
+    const loopPath = `M${qPos.x - 20},${qPos.y + 30} Q${(qPos.x + dvsPos.x) / 2},${loopCtrlY} ${dvsPos.x + 20},${dvsPos.y + 30}`;
+
+    edgeLayer.append('path')
+      .attr('d', loopPath)
+      .attr('class', 'flow-reverse')
+      .attr('fill', 'none')
+      .attr('stroke', '#b8593e')
+      .attr('stroke-opacity', 0.35)
+      .attr('stroke-width', 1)
+      .attr('stroke-dasharray', '3 5')
+      .attr('marker-end', 'url(#arr-loop)');
+
+    // Loop label
+    labelLayer.append('text')
+      .attr('class', 'edge-label')
+      .attr('x', (qPos.x + dvsPos.x) / 2)
+      .attr('y', loopCtrlY + 14)
+      .attr('font-style', 'italic')
+      .text('iterate until clean');
+
+    // ── Analytics edges (from hub outward, chaining through) ──
+    const analyticsPath = [hub].concat(ANALYTICS.map(n => POS[n.id]));
+
+    for (let i = 0; i < analyticsPath.length - 1; i++) {
+      const s = analyticsPath[i];
+      const t = analyticsPath[i + 1];
+      const isFirst = i === 0;
+
+      const dx = t.x - s.x;
+      const dy = t.y - s.y;
+      const ctrl1X = s.x + dx * 0.5;
+      const ctrl1Y = s.y;
+      const ctrl2X = s.x + dx * 0.5;
+      const ctrl2Y = t.y;
+
+      let sx = s.x, sy = s.y, tx = t.x, ty = t.y;
+      if (isFirst) {
+        const hubR = 115;
+        const angle = Math.atan2(t.y - s.y, t.x - s.x);
+        sx = s.x + Math.cos(angle) * hubR;
+        sy = s.y + Math.sin(angle) * hubR;
+      } else {
+        const angle = Math.atan2(t.y - s.y, t.x - s.x);
+        sx = s.x + Math.cos(angle) * 32;
+        sy = s.y + Math.sin(angle) * 32;
+      }
+      const angle = Math.atan2(t.y - s.y, t.x - s.x);
+      tx = t.x - Math.cos(angle) * 32;
+      ty = t.y - Math.sin(angle) * 32;
+
+      const path = `M${sx},${sy} C${ctrl1X},${ctrl1Y} ${ctrl2X},${ctrl2Y} ${tx},${ty}`;
+
+      edgeLayer.append('path')
+        .attr('d', path)
+        .attr('fill', 'none')
+        .attr('stroke', '#3a5a78')
+        .attr('stroke-opacity', 0.15)
+        .attr('stroke-width', 1);
+
+      edgeLayer.append('path')
+        .attr('d', path)
+        .attr('class', 'flow')
+        .attr('fill', 'none')
+        .attr('stroke', '#3a5a78')
+        .attr('stroke-opacity', 0.55)
+        .attr('stroke-width', 1.2);
+    }
+
+    // ── HUB ──
+    // Outer glow rings (pulsing)
+    nodeLayer.append('circle')
+      .attr('cx', hub.x).attr('cy', hub.y)
+      .attr('r', 165)
+      .attr('fill', '#2d4a3e')
+      .attr('fill-opacity', 0.04)
+      .attr('class', 'pulse');
+
+    nodeLayer.append('circle')
+      .attr('cx', hub.x).attr('cy', hub.y)
+      .attr('r', 140)
+      .attr('fill', 'none')
+      .attr('stroke', '#2d4a3e')
+      .attr('stroke-opacity', 0.1)
+      .attr('stroke-width', 1)
+      .attr('stroke-dasharray', '2 6');
+
+    // Main hub circle
+    const hubG = nodeLayer.append('g')
+      .attr('class', 'node-hit')
+      .attr('transform', `translate(${hub.x}, ${hub.y})`)
+      .on('click', () => selectStep(HUB));
+
+    // Selection ring
+    hubG.append('circle')
+      .attr('r', 125)
+      .attr('fill', 'none')
+      .attr('stroke', '#c89b5a')
+      .attr('stroke-width', 1.5)
+      .attr('stroke-dasharray', '3 5')
+      .attr('opacity', activeId === 'lifesight' ? 0.9 : 0);
+
+    const hubGrad = defs.append('radialGradient')
+      .attr('id', 'hub-grad')
+      .attr('cx', '40%').attr('cy', '35%').attr('r', '70%');
+    hubGrad.append('stop').attr('offset', '0%').attr('stop-color', '#3e6454');
+    hubGrad.append('stop').attr('offset', '100%').attr('stop-color', '#1f3529');
+
+    hubG.append('circle')
+      .attr('r', 115)
+      .attr('class', 'node-circle')
+      .attr('fill', 'url(#hub-grad)')
+      .attr('stroke', 'rgba(200, 155, 90, 0.4)')
+      .attr('stroke-width', 1.5)
+      .attr('filter', 'url(#shadow)');
+
+    // Inner decorative ring
+    hubG.append('circle')
+      .attr('r', 98)
+      .attr('fill', 'none')
+      .attr('stroke', 'rgba(200, 155, 90, 0.2)')
+      .attr('stroke-width', 0.8);
+
+    // Hub text
+    hubG.append('text')
+      .attr('class', 'hub-sub')
+      .attr('y', -28)
+      .text('· the hub ·');
+
+    hubG.append('text')
+      .attr('class', 'hub-title')
+      .attr('y', 5)
+      .text('LifeSight');
+
+    hubG.append('text')
+      .attr('class', 'hub-sub')
+      .attr('y', 28)
+      .text('Source of Truth');
+
+    // Small ornament dots on hub
+    [-1, 1].forEach(dir => {
+      hubG.append('circle')
+        .attr('cx', dir * 55).attr('cy', 52)
+        .attr('r', 1.5)
+        .attr('fill', '#c89b5a')
+        .attr('fill-opacity', 0.6);
+    });
+
+    // ── ONBOARDING NODES ──
+    ONBOARD.forEach(n => {
+      drawStepNode(n, PHASES.onboard.hex);
+    });
+
+    // ── ANALYTICS NODES ──
+    ANALYTICS.forEach(n => {
+      drawStepNode(n, PHASES.analytics.hex);
+    });
+
+    // ── Connecting line annotations above each side ──
+    // Decorative underline beneath onboarding phase label
+    bgLayer.append('line')
+      .attr('x1', obMinX + 12)
+      .attr('x2', obMinX + 120)
+      .attr('y1', 116)
+      .attr('y2', 116)
+      .attr('stroke', '#b8593e')
+      .attr('stroke-opacity', 0.4)
+      .attr('stroke-width', 1);
+
+    bgLayer.append('line')
+      .attr('x1', anaMinX - 20)
+      .attr('x2', anaMinX + 80)
+      .attr('y1', 116)
+      .attr('y2', 116)
+      .attr('stroke', '#3a5a78')
+      .attr('stroke-opacity', 0.4)
+      .attr('stroke-width', 1);
+  }
+
+  function drawStepNode(n, color) {
+    const p = POS[n.id];
+    const isActive = activeId === n.id;
+
+    const g = nodeLayer.append('g')
+      .attr('class', 'node-hit')
+      .attr('transform', `translate(${p.x}, ${p.y})`)
+      .on('click', () => selectStep(n));
+
+    // Selection ring
+    g.append('circle')
+      .attr('r', 40)
+      .attr('fill', 'none')
+      .attr('stroke', color)
+      .attr('stroke-width', 1.2)
+      .attr('stroke-dasharray', '2 4')
+      .attr('opacity', isActive ? 0.9 : 0);
+
+    // Gradient
+    const gradId = `grad-${n.id}`;
+    if (!document.getElementById(gradId)) {
+      const grad = defs.append('radialGradient')
+        .attr('id', gradId)
+        .attr('cx', '40%').attr('cy', '35%').attr('r', '65%');
+      grad.append('stop').attr('offset', '0%')
+        .attr('stop-color', d3.color(color).brighter(0.6).formatHex());
+      grad.append('stop').attr('offset', '100%')
+        .attr('stop-color', d3.color(color).darker(0.6).formatHex());
+    }
+
+    // Background ring (paper color) to lift off bg
+    g.append('circle')
+      .attr('r', 32)
+      .attr('fill', 'var(--paper)')
+      .attr('filter', 'url(#shadow)');
+
+    // Colored accent ring
+    g.append('circle')
+      .attr('r', 32)
+      .attr('class', 'node-circle')
+      .attr('fill', 'none')
+      .attr('stroke', color)
+      .attr('stroke-width', isActive ? 2.5 : 1.5)
+      .attr('stroke-opacity', isActive ? 1 : 0.75);
+
+    // Inner filled circle
+    g.append('circle')
+      .attr('r', 25)
+      .attr('fill', `url(#${gradId})`)
+      .attr('fill-opacity', 0.12);
+
+    // Step number
+    g.append('text')
+      .attr('class', 'node-num')
+      .attr('y', -2)
+      .attr('fill', color)
+      .text(n.num);
+
+    // Name label (below circle)
+    labelLayer.append('text')
+      .attr('class', 'node-label')
+      .attr('x', p.x).attr('y', p.y + 52)
+      .text(n.name);
+
+    labelLayer.append('text')
+      .attr('class', 'node-sub')
+      .attr('x', p.x).attr('y', p.y + 66)
+      .text(n.sub);
+  }
+
+  // ── PANEL ─────────────────────────────────────────────────────────────
+  const panelEl = document.getElementById('panel');
+  const accent = panelEl.querySelector('.panel-accent');
+
+  function selectStep(step) {
+    activeId = step.id;
+    const phase = PHASES[step.phase];
+    const accentColor = phase.hex;
+
+    panelEl.style.setProperty('--panel-color', accentColor);
+    accent.style.background = accentColor;
+
+    // Crumb
+    document.getElementById('p-crumb').textContent = step.phase_label || phase.label;
+    document.getElementById('p-crumb').style.color = accentColor;
+
+    // Title (may contain em)
+    document.getElementById('p-title').innerHTML = step.title;
+
+    // Phase tag
+    document.getElementById('p-phase').textContent = phase.label.toLowerCase();
+
+    // Body
+    document.getElementById('p-body').innerHTML = `<p>${step.body}</p>`;
+
+    // Details
+    const detailsEl = document.getElementById('p-details');
+    detailsEl.innerHTML = step.details.map((d, i) =>
+      `<div class="panel-detail">
+        <span class="detail-num">${String(i + 1).padStart(2, '0')}</span>
+        <span class="detail-text">${d}</span>
+      </div>`
+    ).join('');
+
+    // Output
+    document.getElementById('p-output').textContent = step.output;
+
+    // Aside
+    const asideEl = document.getElementById('p-aside');
+    if (step.aside) {
+      asideEl.innerHTML = step.aside;
+      asideEl.style.display = 'block';
+    } else {
+      asideEl.style.display = 'none';
+    }
+
+    // Nav indicator
+    const idx = ALL_STEPS.findIndex(s => s.id === step.id);
+    document.getElementById('p-nav').textContent =
+      step.id === 'lifesight'
+        ? 'the hub · where onboarding becomes insight'
+        : `step ${String(idx + 1).padStart(2, '0')} · of · ${String(ALL_STEPS.length).padStart(2, '0')}`;
+
+    panelEl.classList.remove('hidden');
+    draw();
+  }
+
+  function closePanel() {
+    activeId = null;
+    panelEl.classList.add('hidden');
+    draw();
+  }
+
+  document.getElementById('p-close').addEventListener('click', closePanel);
+  document.addEventListener('keydown', e => {
+    if (e.key === 'Escape') closePanel();
+  });
+
+  // ── INIT ──────────────────────────────────────────────────────────────
+  layout();
+  draw();
+
+  // Open hub by default after a beat
+  setTimeout(() => selectStep(HUB), 600);
+
+  // ── RESIZE ────────────────────────────────────────────────────────────
+  window.addEventListener('resize', () => {
+    W = window.innerWidth;
+    H = window.innerHeight;
+    svg.attr('viewBox', [0, 0, W, H]);
+    layout();
+    draw();
+  });
+</script>
+</body>
+</html>
